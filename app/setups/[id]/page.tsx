@@ -3,12 +3,12 @@ import { SetupDetailClient } from "../setup-detail-client";
 
 export default function SetupDetailPage({ params }: { params: { id: string } }) {
   return (
-    <main className="min-h-screen bg-slate-50 py-10">
-      <div className="mx-auto max-w-screen-2xl px-4 space-y-8">
-        <header className="flex items-center justify-between">
+    <main className="min-h-screen bg-[#efefef] py-6">
+      <div className="mx-auto max-w-[1600px] px-4 space-y-4">
+        <header className="border border-slate-500 bg-[#3a3a3a] px-4 py-3 text-white">
           <Link
             href="/"
-            className="inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center rounded-sm border border-white px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
           >
             ← Home
           </Link>

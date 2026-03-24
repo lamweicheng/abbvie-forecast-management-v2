@@ -1,10 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Phase0Client } from "./Phase0Client";
 import { Phase1Client } from "./Phase1Client";
 import { Phase2Client } from "./Phase2Client";
+import {
+  PowerCommandBar,
+  PowerField,
+  PowerInfoStrip,
+  PowerPanel,
+  powerFileClassName,
+  powerGhostButtonClassName,
+  powerInputClassName,
+  powerPrimaryButtonClassName,
+  powerTextAreaClassName,
+  powerWarningButtonClassName
+} from "./phase-ui";
 import { PHASES } from "../../lib/phases";
 import { BASE_CYCLES, type ForecastCycleRow } from "../../lib/cycles";
 import { formatProductsLabel } from "../../lib/setups";
@@ -23,7 +36,6 @@ export function PhaseScreen({
   cycleId,
   phaseName,
   instruction,
-  enablePhasePeek = true,
   progressPhaseIdOverride,
   preview = false
 }: {
@@ -31,184 +43,246 @@ export function PhaseScreen({
   cycleId?: string;
   phaseName?: string;
   instruction?: string;
-  enablePhasePeek?: boolean;
   progressPhaseIdOverride?: number;
   preview?: boolean;
 }) {
   const { cyclesById } = useSessionCycles();
-  const [peekPhaseId, setPeekPhaseId] = useState<number | null>(null);
   const cycle: ForecastCycleRow | undefined = cycleId
     ? cyclesById[cycleId] ?? BASE_CYCLES.find((c) => c.id === cycleId)
     : undefined;
   const lastPhaseId = PHASES.length - 1;
+  const resolvedPhaseName = phaseName ?? PHASES.find((p) => p.id === phaseId)?.name;
+  const resolvedInstruction = instruction ?? PHASES.find((p) => p.id === phaseId)?.shortDescription;
 
   const recordBanner = cycleId ? (
-    <div className="rounded-lg border bg-white px-4 py-3 shadow-sm text-base text-slate-700">
-      <span className="text-sm font-semibold text-slate-900">{cycleId}</span>
-      <span className="mx-2 text-slate-300">|</span>
-      <span className="font-medium text-slate-900 text-sm">Period:</span>{" "}
-      <span className="text-sm font-semibold text-slate-900">{periodLabelFromCycle(cycle)}</span>
-      <span className="mx-2 text-slate-300">|</span>
-      <span className="font-medium text-slate-900 text-sm">Pillar:</span>{" "}
-      <span className="text-sm font-semibold text-slate-900">{cycle?.pillar ?? "—"}</span>
-      <span className="mx-2 text-slate-300">|</span>
-      <span className="font-medium text-slate-900 text-sm">TPM Name:</span>{" "}
-      <span className="text-sm font-semibold text-slate-900">{cycle?.tpm || "—"}</span>
+    <div className="border border-slate-400 bg-white px-4 py-3 text-base text-slate-700">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="border border-slate-400 bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
+          {cycleId}
+        </span>
+        <span className="text-sm"><span className="font-medium text-slate-700">Period</span> <span className="font-semibold text-slate-900">{periodLabelFromCycle(cycle)}</span></span>
+        <span className="text-sm"><span className="font-medium text-slate-700">Pillar</span> <span className="font-semibold text-slate-900">{cycle?.pillar ?? "—"}</span></span>
+        <span className="text-sm"><span className="font-medium text-slate-700">TPM</span> <span className="font-semibold text-slate-900">{cycle?.tpm || "—"}</span></span>
+        <span className="text-sm"><span className="font-medium text-slate-700">Products</span> <span className="font-semibold text-slate-900">{cycle ? (formatProductsLabel(cycle.products) || "—") : "—"}</span></span>
+      </div>
       {cycle?.tpmLocation ? (
-        <>
-          <span className="mx-2 text-slate-300">|</span>
-          <span className="font-medium text-slate-900 text-sm">TPM Location:</span>{" "}
-          <span className="text-sm font-semibold text-slate-900">{cycle.tpmLocation}</span>
-        </>
+        <div className="mt-3 text-sm text-slate-600">
+          TPM Location: <span className="font-semibold text-slate-900">{cycle.tpmLocation}</span>
+        </div>
       ) : null}
-      <span className="mx-2 text-slate-300">|</span>
-      <span className="font-medium text-slate-900 text-sm">Products:</span>{" "}
-      <span className="text-sm font-semibold text-slate-900">{cycle ? (formatProductsLabel(cycle.products) || "—") : "—"}</span>
     </div>
   ) : null;
 
   const actualCurrentPhaseId = Math.min(cycle?.phaseId ?? phaseId, lastPhaseId);
-  const displayPhaseId = Math.min(progressPhaseIdOverride ?? actualCurrentPhaseId, lastPhaseId);
-  const canPeek = Boolean(enablePhasePeek && !preview && cycleId && cycle && actualCurrentPhaseId > 0);
+  const hasWorkflowState = Boolean(cycleId && cycle);
+  const isHistoricalPhase = hasWorkflowState && phaseId < actualCurrentPhaseId;
+  const isFuturePhase = hasWorkflowState && phaseId > actualCurrentPhaseId;
+  const effectivePreview = preview || isHistoricalPhase;
+  const activePhaseName = PHASES.find((p) => p.id === actualCurrentPhaseId)?.name ?? `Phase ${actualCurrentPhaseId + 1}`;
+  const shellTone = effectivePreview
+    ? "border-amber-200 bg-amber-50 text-amber-900"
+    : isFuturePhase
+      ? "border-slate-200 bg-slate-100 text-slate-700"
+      : "border-emerald-200 bg-emerald-50 text-emerald-900";
 
   const content = (() => {
     if (phaseId === 0) {
-      return <Phase0Client cycleId={cycleId} preview={preview} />;
+      return <Phase0Client cycleId={cycleId} preview={effectivePreview} />;
     }
 
     if (phaseId === 1) {
-      return <Phase1Client cycleId={cycleId} preview={preview} />;
+      return <Phase1Client cycleId={cycleId} preview={effectivePreview} />;
     }
 
     if (phaseId === 2) {
-      return <Phase2Client cycleId={cycleId} preview={preview} />;
+      return <Phase2Client cycleId={cycleId} preview={effectivePreview} />;
     }
 
     if (phaseId === 3) {
-      return <Phase3Client cycleId={cycleId} cycle={cycle} preview={preview} />;
+      return <Phase3Client cycleId={cycleId} cycle={cycle} preview={effectivePreview} />;
     }
 
     if (phaseId === 4) {
-      return <Phase4Client cycleId={cycleId} cycle={cycle} preview={preview} />;
+      return <Phase4Client cycleId={cycleId} cycle={cycle} preview={effectivePreview} />;
     }
 
     return null;
   })();
 
   return (
-    <div className="space-y-4">
-      {recordBanner}
-      <PhaseProgress
-        currentPhaseId={displayPhaseId}
-        phaseName={phaseName}
-        instruction={instruction}
-        clickableUpTo={canPeek ? actualCurrentPhaseId : undefined}
-        onPhaseClick={canPeek ? (id) => setPeekPhaseId(id) : undefined}
-      />
-      {cycle && cycleId && phaseId !== 0 ? <CycleInfoCard cycle={cycle} /> : null}
-      {content}
-
-      {peekPhaseId !== null && cycleId && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Phase details"
-          onMouseDown={() => setPeekPhaseId(null)}
-        >
-          <div
-            className="flex w-full max-w-4xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border bg-white shadow-sm"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-              <div className="text-sm font-semibold text-slate-900">
-                {PHASES.find((p) => p.id === peekPhaseId)?.name ?? `Phase ${peekPhaseId + 1}`}
-              </div>
-              <button
-                type="button"
-                className="rounded-md border px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                onClick={() => setPeekPhaseId(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 overscroll-contain">
-              <PhaseScreen
-                phaseId={peekPhaseId}
-                cycleId={cycleId}
-                phaseName={PHASES.find((p) => p.id === peekPhaseId)?.name}
-                instruction={PHASES.find((p) => p.id === peekPhaseId)?.shortDescription}
-                preview
-                enablePhasePeek={false}
-                progressPhaseIdOverride={peekPhaseId}
-              />
-            </div>
-          </div>
+    <div className="grid gap-4 lg:grid-cols-[270px_minmax(0,1fr)]">
+      <aside className="overflow-hidden border border-slate-400 bg-white">
+        <div className="border-b border-slate-500 bg-[#3a3a3a] px-4 py-4 text-white">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">Forecast workflow</div>
+          <div className="mt-1 text-lg font-semibold">Phase navigator</div>
         </div>
-      )}
+
+        <div className="space-y-0 bg-[#f3f3f3] p-2">
+          {PHASES.map((phase, idx) => {
+            const status = idx < actualCurrentPhaseId
+              ? "Completed"
+              : idx === actualCurrentPhaseId
+                ? "Current"
+                : "Locked";
+            const isActive = idx === phaseId;
+            const isLocked = hasWorkflowState && idx > actualCurrentPhaseId;
+            const canOpen = !preview && Boolean(cycleId) && !isLocked;
+            const itemClassName = [
+              "group mb-2 flex w-full items-start gap-3 border px-3 py-3 text-left",
+              isActive
+                ? "border-slate-700 bg-white"
+                : isLocked
+                  ? "border-slate-300 bg-slate-100 text-slate-400"
+                  : "border-slate-300 bg-white hover:bg-slate-50"
+            ].join(" ");
+
+            const inner = (
+              <>
+                <span
+                  className={[
+                    "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center border text-sm font-semibold",
+                    isActive
+                      ? "border-slate-700 bg-slate-700 text-white"
+                      : idx < actualCurrentPhaseId
+                        ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                        : isLocked
+                          ? "border-slate-300 bg-slate-100 text-slate-400"
+                          : "border-slate-400 bg-slate-100 text-slate-700"
+                  ].join(" ")}
+                >
+                  {idx + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="block text-sm font-semibold text-slate-900">{phase.name}</span>
+                    <span
+                      className={[
+                        "border px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em]",
+                        status === "Current"
+                          ? "border-slate-700 bg-slate-700 text-white"
+                          : status === "Completed"
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                            : "border-slate-300 bg-slate-100 text-slate-700"
+                      ].join(" ")}
+                    >
+                      {status}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-600">{phase.shortDescription}</span>
+                </span>
+              </>
+            );
+
+            if (!canOpen) {
+              return (
+                <div key={phase.id} className={itemClassName} aria-disabled={isLocked}>
+                  {inner}
+                </div>
+              );
+            }
+
+            return (
+              <Link key={phase.id} href={phaseRoute(phase.id, cycleId)} className={itemClassName}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      </aside>
+
+      <div className="space-y-4">
+        {recordBanner}
+
+        <section className="overflow-hidden border border-slate-400 bg-white">
+          <div className="border-b border-slate-300 bg-[#d9d9d9] px-5 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-700">Phase workspace</div>
+                <h1 className="mt-2 text-2xl font-semibold text-slate-950">{resolvedPhaseName}</h1>
+                {resolvedInstruction ? <p className="mt-2 max-w-3xl text-sm leading-5 text-slate-700">{resolvedInstruction}</p> : null}
+              </div>
+              <div className={["border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em]", shellTone].join(" ")}>
+                {isFuturePhase ? "Locked" : effectivePreview ? "View only" : "Editable"}
+              </div>
+            </div>
+
+            {effectivePreview && hasWorkflowState ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <StatusChip label="Access" value="Read only" tone="amber" />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="bg-[#f4f4f4] px-5 py-5">
+            {isFuturePhase ? (
+              <LockedPhasePanel currentPhaseId={actualCurrentPhaseId} cycleId={cycleId} />
+            ) : (
+              <div className="space-y-4">
+                {isHistoricalPhase ? (
+                  <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    View only
+                  </div>
+                ) : null}
+                {cycle && cycleId && phaseId !== 0 ? <CycleInfoCard cycle={cycle} /> : null}
+                {content}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
 
-function PhaseProgress({
-  currentPhaseId,
-  phaseName,
-  instruction,
-  clickableUpTo,
-  onPhaseClick
+function phaseRoute(phaseId: number, cycleId?: string) {
+  if (!cycleId) return `/phases/${phaseId}`;
+  return `/phases/${phaseId}?cycle=${encodeURIComponent(cycleId)}`;
+}
+
+function StatusChip({
+  label,
+  value,
+  tone
 }: {
-  currentPhaseId: number;
-  phaseName?: string;
-  instruction?: string;
-  clickableUpTo?: number;
-  onPhaseClick?: (phaseId: number) => void;
+  label: string;
+  value: string;
+  tone: "slate" | "sky" | "amber";
 }) {
+  const toneClassName = tone === "sky"
+    ? "border-sky-200 bg-sky-50 text-sky-800"
+    : tone === "amber"
+      ? "border-amber-200 bg-amber-50 text-amber-800"
+      : "border-slate-200 bg-slate-50 text-slate-800";
+
   return (
-    <div className="rounded-xl border bg-white px-4 py-3 shadow-sm">
-      {phaseName ? <div className="mb-2 text-lg font-semibold text-slate-900">{phaseName}</div> : null}
-      <div className="flex flex-wrap items-center gap-2">
-        {PHASES.map((_, idx) => {
-          const done = idx < currentPhaseId;
-          const current = idx === currentPhaseId;
-          const cls = done
-            ? "border-emerald-600 bg-emerald-600 text-white"
-            : current
-              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-              : "border-slate-200 bg-slate-50 text-slate-500";
+    <div className={["border px-3 py-1.5 text-xs", toneClassName].join(" ")}>
+      <span className="font-medium text-slate-700">{label}</span>{" "}
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
 
-          const isClickable = typeof clickableUpTo === "number" && idx <= clickableUpTo && Boolean(onPhaseClick);
-
-          const bubble = (
-            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${cls}`}>
-              {idx + 1}
-            </span>
-          );
-
-          return (
-            <div key={idx} className="flex items-center gap-2">
-              {isClickable ? (
-                <button
-                  type="button"
-                  onClick={() => onPhaseClick?.(idx)}
-                  className="rounded-full disabled:cursor-not-allowed"
-                  aria-label={`View Phase ${idx + 1}`}
-                >
-                  {bubble}
-                </button>
-              ) : (
-                bubble
-              )}
-              {idx < PHASES.length - 1 ? <div className="h-px w-8 bg-slate-200" /> : null}
-            </div>
-          );
-        })}
-      </div>
-      {phaseName ? null : (
-        <div className="mt-2 text-xs text-slate-600">
-          {`Currently in Phase ${currentPhaseId + 1}`}
+function LockedPhasePanel({ currentPhaseId, cycleId }: { currentPhaseId: number; cycleId?: string }) {
+  return (
+    <div className="border border-slate-400 bg-white p-6">
+      <div className="max-w-2xl space-y-3">
+        <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Phase locked</div>
+        <h2 className="text-xl font-semibold text-slate-950">Complete the current phase before moving forward.</h2>
+        <p className="text-sm leading-6 text-slate-600">
+          This workflow only allows users to open the active phase and any completed phases. Future phases stay locked until the current phase is submitted.
+        </p>
+        <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          Current workflow phase: <span className="font-semibold text-slate-950">{PHASES.find((p) => p.id === currentPhaseId)?.name ?? `Phase ${currentPhaseId + 1}`}</span>
         </div>
-      )}
-      {instruction ? <div className="mt-1 text-base text-slate-700">{instruction}</div> : null}
+        {cycleId ? (
+          <Link
+            href={phaseRoute(currentPhaseId, cycleId)}
+            className="inline-flex border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Open current phase
+          </Link>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -222,10 +296,10 @@ function CycleInfoCard({ cycle }: { cycle: ForecastCycleRow }) {
   const sendToTpmDue = cycle.tpmSubmissionDue || "—";
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-4">
+    <section className="border border-slate-400 bg-white p-5 space-y-4">
       <div className="text-sm font-semibold text-slate-900">Instance information</div>
       <div className="grid gap-3 md:grid-cols-2 text-base">
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <div className="border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <div>
             Assignee(s): <span className="font-medium">{assigneesText}</span>
           </div>
@@ -236,7 +310,7 @@ function CycleInfoCard({ cycle }: { cycle: ForecastCycleRow }) {
             Date requested: <span className="font-medium">{requestedDate}</span>
           </div>
         </div>
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <div className="border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <div>
             Forecast submission to EM due: <span className="font-medium">{gspForecastDue}</span>
           </div>
@@ -249,7 +323,7 @@ function CycleInfoCard({ cycle }: { cycle: ForecastCycleRow }) {
         </div>
       </div>
 
-      <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+      <div className="border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
         <div className="mb-1 text-sm font-medium text-slate-700">Comments from record creator</div>
         {cycle.emManagerComments?.trim() ? cycle.emManagerComments : <span className="text-slate-500">—</span>}
       </div>
@@ -309,48 +383,52 @@ function Phase3Client({
   };
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-8">
-      <div className="space-y-2 text-base">
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          Status: <span className="font-medium">Approved in Phase 3 – ready to send to TPM</span>
-        </div>
-        <div className="space-y-1">
-          <div className="text-sm font-medium text-slate-700">Approved forecast file</div>
-          <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-600">
-            [Link / button to download approved forecast file]
+    <section className="space-y-5">
+      <PowerPanel
+        title="Submission tracking"
+        tone="sky"
+      >
+        <div className="space-y-4">
+          <PowerInfoStrip tone="slate">
+            Status: <span className="font-semibold">Approved in Phase 3 and ready to send to TPM</span>
+          </PowerInfoStrip>
+
+          <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Approved forecast file</div>
+            <div className="mt-2">[Link / button to download approved forecast file]</div>
+          </div>
+
+          <div className="border border-slate-300 bg-white px-4 py-4">
+            <label htmlFor="sentToTpm" className="flex items-center gap-3 text-sm text-slate-800">
+              <input
+                id="sentToTpm"
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300"
+                disabled={preview}
+                checked={sentToTpm}
+                onChange={(e) => setSentToTpm(e.target.checked)}
+              />
+              I have sent the forecast file to TPM via Outlook
+            </label>
+          </div>
+
+          <div className="max-w-xs">
+            <PowerField label="Date email was sent">
+              <input
+                type="date"
+                className={powerInputClassName}
+                disabled={preview}
+                value={sentToTpmDate}
+                onChange={(e) => setSentToTpmDate(e.target.value)}
+              />
+            </PowerField>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-4 text-base">
-        <div className="flex items-center gap-3">
-          <input
-            id="sentToTpm"
-            type="checkbox"
-            className="h-4 w-4"
-            disabled={preview}
-            checked={sentToTpm}
-            onChange={(e) => setSentToTpm(e.target.checked)}
-          />
-          <label htmlFor="sentToTpm" className="text-sm text-slate-800">
-            I have sent the forecast file to TPM via Outlook
-          </label>
-        </div>
-        <div className="space-y-1 max-w-xs">
-          <label className="block text-sm font-medium text-slate-700">Date email was sent</label>
-          <input
-            type="date"
-            className="w-full rounded-md border px-3 py-2 text-base"
-            disabled={preview}
-            value={sentToTpmDate}
-            onChange={(e) => setSentToTpmDate(e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 text-sm">
+        <PowerCommandBar>
           <button
             type="button"
-            className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
+            className={powerGhostButtonClassName}
             disabled={preview || !cycleId}
             onClick={() => {
               persist(3);
@@ -361,11 +439,7 @@ function Phase3Client({
           </button>
           <button
             type="button"
-            className={
-              preview
-                ? "rounded-md bg-slate-900 px-4 py-2 text-white opacity-60"
-                : "rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
-            }
+            className={powerPrimaryButtonClassName}
             disabled={preview}
             onClick={() => {
               if (preview) return;
@@ -376,8 +450,8 @@ function Phase3Client({
           >
             Proceed to Phase 5
           </button>
-        </div>
-      </div>
+        </PowerCommandBar>
+      </PowerPanel>
     </section>
   );
 }
@@ -421,16 +495,20 @@ function Phase4Client({
   };
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-8">
-      <div className="space-y-4 text-base">
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-slate-700">TPM outcome</div>
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-800">
+    <section className="space-y-5">
+      <PowerPanel
+        title="TPM confirmation and closeout"
+        tone="emerald"
+      >
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="text-sm font-semibold text-slate-800">TPM outcome</div>
+
+            <label className="flex items-center gap-3 border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
               <input
                 type="radio"
                 name="tpmOutcome"
-                className="h-4 w-4"
+                className="h-4 w-4 border-slate-300"
                 disabled={preview}
                 checked={tpmOutcome === "approved"}
                 onChange={() => setTpmOutcome("approved")}
@@ -439,33 +517,34 @@ function Phase4Client({
             </label>
 
             {tpmOutcome === "approved" ? (
-              <div className="ml-6 space-y-3">
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">Upload TPM confirmation email</label>
-                  <input type="file" className="text-sm" disabled={preview} />
+              <div className="grid gap-4 border border-emerald-300 bg-emerald-50 p-4 lg:grid-cols-[1fr_240px]">
+                <div className="space-y-4">
+                  <PowerField label="Upload TPM confirmation email">
+                    <input type="file" className={powerFileClassName} disabled={preview} />
+                  </PowerField>
+                  <PowerField label="Upload finalized forecast file">
+                    <input type="file" className={powerFileClassName} disabled={preview} />
+                  </PowerField>
                 </div>
-                <div className="space-y-1 max-w-xs">
-                  <label className="block text-sm font-medium text-slate-700">Date TPM confirmed</label>
-                  <input
-                    type="date"
-                    className="w-full rounded-md border px-3 py-2 text-base"
-                    disabled={preview}
-                    value={tpmConfirmedDate}
-                    onChange={(e) => setTpmConfirmedDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">Upload finalized forecast file</label>
-                  <input type="file" className="text-sm" disabled={preview} />
+                <div>
+                  <PowerField label="Date TPM confirmed">
+                    <input
+                      type="date"
+                      className={powerInputClassName}
+                      disabled={preview}
+                      value={tpmConfirmedDate}
+                      onChange={(e) => setTpmConfirmedDate(e.target.value)}
+                    />
+                  </PowerField>
                 </div>
               </div>
             ) : null}
 
-            <label className="flex items-center gap-2 text-sm text-slate-800">
+            <label className="flex items-center gap-3 border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
               <input
                 type="radio"
                 name="tpmOutcome"
-                className="h-4 w-4"
+                className="h-4 w-4 border-slate-300"
                 disabled={preview}
                 checked={tpmOutcome === "changes_requested"}
                 onChange={() => setTpmOutcome("changes_requested")}
@@ -474,28 +553,26 @@ function Phase4Client({
             </label>
 
             {tpmOutcome === "changes_requested" ? (
-              <div className="ml-6 space-y-1">
-                <label className="block text-sm font-medium text-slate-700">Requested changes (for assignee)</label>
-                <textarea
-                  className="w-full rounded-md border px-3 py-2.5 text-base"
-                  rows={3}
-                  placeholder="Summarise what TPM wants changed and why."
-                  disabled={preview}
-                  value={tpmChangeRequest}
-                  onChange={(e) => setTpmChangeRequest(e.target.value)}
-                />
-                <div className="text-xs text-slate-500">
-                  This will be shown to assignee(s) when the instance reverts to Phase 2.
-                </div>
+              <div className="border border-amber-300 bg-amber-50 p-4">
+                <PowerField label="Requested changes (for assignee)" hint="This summary will be shown when the instance is routed back for updates.">
+                  <textarea
+                    className={powerTextAreaClassName}
+                    rows={4}
+                    placeholder="Summarise what TPM wants changed and why."
+                    disabled={preview}
+                    value={tpmChangeRequest}
+                    onChange={(e) => setTpmChangeRequest(e.target.value)}
+                  />
+                </PowerField>
               </div>
             ) : null}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 text-sm">
+        <PowerCommandBar>
           <button
             type="button"
-            className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
+            className={powerGhostButtonClassName}
             disabled={preview || !cycleId}
             onClick={() => {
               persist(4);
@@ -506,11 +583,7 @@ function Phase4Client({
           </button>
           <button
             type="button"
-            className={
-              preview
-                ? "rounded-md bg-slate-900 px-4 py-2 text-white opacity-60"
-                : "rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
-            }
+            className={tpmOutcome === "approved" ? powerPrimaryButtonClassName : powerWarningButtonClassName}
             disabled={
               preview ||
               (tpmOutcome === "changes_requested" && tpmChangeRequest.trim().length === 0)
@@ -533,7 +606,6 @@ function Phase4Client({
                 return;
               }
 
-              // Changes requested: revert to Phase 2 (internal id 1)
               persist(1);
               if (cycleId) router.push(`/phases/1?cycle=${encodeURIComponent(cycleId)}`);
               else router.push("/phases/1");
@@ -541,8 +613,8 @@ function Phase4Client({
           >
             {tpmOutcome === "approved" ? "Close forecast instance" : "Request changes (revert to Phase 2)"}
           </button>
-        </div>
-      </div>
+        </PowerCommandBar>
+      </PowerPanel>
     </section>
   );
 }

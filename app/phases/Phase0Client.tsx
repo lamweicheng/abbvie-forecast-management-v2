@@ -7,6 +7,18 @@ import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
 import { useSessionCycles, useSessionData } from "../SessionDataProvider";
 import { BASE_SETUPS, DEFAULT_BUSINESS_DAYS, type Recurrence, type SetupRow, type TpmSubmissionScheduleRule } from "../../lib/setups";
+import {
+  PowerCommandBar,
+  PowerField,
+  PowerInfoStrip,
+  PowerMetric,
+  PowerPanel,
+  PowerPill,
+  powerGhostButtonClassName,
+  powerInputClassName,
+  powerPrimaryButtonClassName,
+  powerTextAreaClassName
+} from "./phase-ui";
 
 function todayIso() {
   // Use local calendar date (not UTC) so "today" matches user expectation.
@@ -240,295 +252,302 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
   };
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-8">
+    <section className="space-y-5">
       {!cycleId ? (
-        <div className="rounded-lg border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <PowerInfoStrip tone="amber">
           Open Phase 1 from an instance in a setup.
-        </div>
+        </PowerInfoStrip>
       ) : null}
 
       {setup ? (
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          <span className="font-medium">TPM submission rule:</span> {describeRule(setup.tpmSubmissionSchedule, setup.recurrence)}
-        </div>
+        <PowerInfoStrip tone="sky">
+          <span className="font-semibold">TPM submission rule:</span> {describeRule(setup.tpmSubmissionSchedule, setup.recurrence)}
+        </PowerInfoStrip>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 text-base">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Assign assignee(s)</label>
-          <div className="flex items-center gap-2">
-            <input
-              className="w-full rounded-md border px-3 py-2.5 text-base"
-              placeholder="Type to search and add"
-              value={assigneeInput}
-              onChange={(e) => setAssigneeInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addAssignee();
-                }
-              }}
-              disabled={!cycleId || preview}
-              list="assignee-options"
-            />
-            <button
-              type="button"
-              className="rounded-md border px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              onClick={addAssignee}
-              disabled={!cycleId || preview}
-            >
-              Add
-            </button>
-            <datalist id="assignee-options">
-              {ASSIGNEE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-          </div>
-
-          {assignees.length === 0 ? (
-            <p className="text-sm text-slate-500">No assignees selected.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {assignees.map((name) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center gap-2 rounded-md border bg-slate-50 px-2 py-1 text-[11px] text-slate-700"
-                >
-                  {name}
-                  <button
-                    type="button"
-                    className="text-slate-500 hover:text-slate-900"
-                    onClick={() => setAssignees((prev) => prev.filter((p) => p !== name))}
-                    disabled={!cycleId || preview}
-                    aria-label={`Remove ${name}`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+      <PowerPanel
+        title="Ownership and routing"
+        tone="sky"
+      >
+        <div className="grid gap-5 md:grid-cols-2">
+          <PowerField label="Assign assignee(s)" hint="Search and add forecast preparers for this instance.">
+            <div className="flex items-center gap-2">
+              <input
+                className={powerInputClassName}
+                placeholder="Type to search and add"
+                value={assigneeInput}
+                onChange={(e) => setAssigneeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addAssignee();
+                  }
+                }}
+                disabled={!cycleId || preview}
+                list="assignee-options"
+              />
+              <button
+                type="button"
+                className={powerGhostButtonClassName}
+                onClick={addAssignee}
+                disabled={!cycleId || preview}
+              >
+                Add
+              </button>
+              <datalist id="assignee-options">
+                {ASSIGNEE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt} />
+                ))}
+              </datalist>
             </div>
-          )}
-        </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Approvers</label>
-          <div className="flex items-center gap-2">
-            <input
-              className="w-full rounded-md border px-3 py-2.5 text-base"
-              placeholder="Type to search and add"
-              value={approverInput}
-              onChange={(e) => setApproverInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addApprover();
-                }
-              }}
-              disabled={!cycleId || preview}
-              list="approver-options"
-            />
-            <button
-              type="button"
-              className="rounded-md border px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              onClick={addApprover}
-              disabled={!cycleId || preview}
-            >
-              Add
-            </button>
-            <datalist id="approver-options">
-              {APPROVER_OPTIONS.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-          </div>
-
-          {approvers.length === 0 ? (
-            <p className="text-sm text-slate-500">No approvers selected.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {approvers.map((name) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center gap-2 rounded-md border bg-slate-50 px-2 py-1 text-[11px] text-slate-700"
-                >
-                  {name}
-                  <button
-                    type="button"
-                    className="text-slate-500 hover:text-slate-900"
-                    onClick={() => setApprovers((prev) => prev.filter((p) => p !== name))}
-                    disabled={!cycleId || preview}
-                    aria-label={`Remove ${name}`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3 text-base">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Preparation due (assignee forecast)</label>
-          <input
-            type="date"
-            className="w-full rounded-md border px-3 py-2.5 text-base"
-            value={gspForecastDue}
-            onChange={(e) => setGspForecastDue(e.target.value)}
-            disabled={!cycleId || preview}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Review due (approver review)</label>
-          <input
-            type="date"
-            className="w-full rounded-md border px-3 py-2.5 text-base"
-            value={approverReviewDue}
-            onChange={(e) => setApproverReviewDue(e.target.value)}
-            disabled={!cycleId || preview}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Submission due (send forecast to TPM)</label>
-          <input
-            type="date"
-            className="w-full rounded-md border px-3 py-2.5 text-base"
-            value={tpmSubmissionDue}
-            onChange={(e) => setTpmSubmissionDue(e.target.value)}
-            disabled={!cycleId || preview}
-          />
-        </div>
-      </div>
-
-      {cycleId ? (
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-xs text-slate-700">
-          <div>
-            <span className="font-semibold text-slate-900">Preparation time given:</span>{" "}
-            {updatedTimeline ? (
-              updatedTimeline.todayToPrepDays > 0 ? (
-                <>
-                  {updatedTimeline.todayToPrepDays} days / {updatedTimeline.todayToPrepBusinessDays} business days (today to preparation due)
-                </>
-              ) : updatedTimeline.todayToPrepDays === 0 ? (
-                <>0 days / 0 business days (preparation due is today)</>
-              ) : (
-                <>
-                  overdue by {Math.abs(updatedTimeline.todayToPrepDays)} days / {Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days (preparation due)
-                </>
-              )
+            {assignees.length === 0 ? (
+              <p className="text-sm text-slate-500">No assignees selected.</p>
             ) : (
-              <>—</>
+              <div className="flex flex-wrap gap-2">
+                {assignees.map((name) => (
+                  <PowerPill key={name}>
+                    {name}
+                    <button
+                      type="button"
+                      className="text-slate-500 hover:text-slate-900"
+                      onClick={() => setAssignees((prev) => prev.filter((p) => p !== name))}
+                      disabled={!cycleId || preview}
+                      aria-label={`Remove ${name}`}
+                    >
+                      ×
+                    </button>
+                  </PowerPill>
+                ))}
+              </div>
             )}
-          </div>
-          <div className="mt-1 text-[11px] text-slate-600">Suggested preparation time: {suggestedBusinessDays.preparation} business days</div>
-        </div>
-      ) : null}
+          </PowerField>
 
-      {dueDateChanges.length ? (
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          <div className="text-xs font-semibold text-slate-900">Updated due dates (this instance)</div>
-          <div className="mt-2 grid gap-2">
-            {dueDateChanges.map((c) => (
-              <div key={c.label} className="rounded-md border bg-white px-3 py-2">
-                <div className="text-xs font-medium text-slate-800">{c.label}</div>
-                <div className="mt-1 text-xs text-slate-600">
-                  Default: <span className="font-medium text-slate-900">{c.defaultValue}</span>
-                  <span className="mx-2 text-slate-300">|</span>
-                  Updated: <span className="font-medium text-slate-900">{c.updatedValue}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {updatedTimeline ? (
-            <div className="mt-3 rounded-md border bg-white px-3 py-2">
-              <div className="text-xs font-semibold text-slate-900">Time allocated (updated due dates)</div>
-              <div className="mt-1 text-xs text-slate-700">
-                Preparation:{" "}
-                <span className="font-medium text-slate-900">
-                  {updatedTimeline.todayToPrepDays > 0
-                    ? `${updatedTimeline.todayToPrepDays} days / ${updatedTimeline.todayToPrepBusinessDays} business days`
-                    : updatedTimeline.todayToPrepDays === 0
-                      ? "0 days / 0 business days"
-                      : `overdue by ${Math.abs(updatedTimeline.todayToPrepDays)} days / ${Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days`}
-                </span>{" "}
-                to prepare
-                <span className="mx-2 text-slate-300">|</span>
-                Review: <span className="font-medium text-slate-900">{updatedTimeline.prepToReviewDays} days</span> to review
-                <span className="mx-2 text-slate-300">|</span>
-                Submission: <span className="font-medium text-slate-900">{updatedTimeline.reviewToTpmDays} days</span> to submit
-              </div>
-
-              <div className="mt-1 text-[11px] text-slate-600">
-                Suggested timeline: Preparation = {suggestedBusinessDays.preparation} business days to prepare. Review = {suggestedBusinessDays.review} business days to review. Submission = {suggestedBusinessDays.submission} business days to submit. You can update due dates to ensure sufficient time.
-              </div>
-
-              {updatedTimeline.outOfOrder ? (
-                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                  One or more due dates are out of order (review should be on/after preparation, and TPM submission should be on/after review).
-                </div>
-              ) : null}
+          <PowerField label="Approvers" hint="Define who can review and approve the submitted forecast.">
+            <div className="flex items-center gap-2">
+              <input
+                className={powerInputClassName}
+                placeholder="Type to search and add"
+                value={approverInput}
+                onChange={(e) => setApproverInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addApprover();
+                  }
+                }}
+                disabled={!cycleId || preview}
+                list="approver-options"
+              />
+              <button
+                type="button"
+                className={powerGhostButtonClassName}
+                onClick={addApprover}
+                disabled={!cycleId || preview}
+              >
+                Add
+              </button>
+              <datalist id="approver-options">
+                {APPROVER_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt} />
+                ))}
+              </datalist>
             </div>
-          ) : null}
+
+            {approvers.length === 0 ? (
+              <p className="text-sm text-slate-500">No approvers selected.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {approvers.map((name) => (
+                  <PowerPill key={name}>
+                    {name}
+                    <button
+                      type="button"
+                      className="text-slate-500 hover:text-slate-900"
+                      onClick={() => setApprovers((prev) => prev.filter((p) => p !== name))}
+                      disabled={!cycleId || preview}
+                      aria-label={`Remove ${name}`}
+                    >
+                      ×
+                    </button>
+                  </PowerPill>
+                ))}
+              </div>
+            )}
+          </PowerField>
         </div>
-      ) : null}
+      </PowerPanel>
 
-      <div className="text-xs text-slate-500">
-        Default milestone dates are auto-populated based on the setup template: Preparation = {suggestedBusinessDays.preparation} business days. Review = {suggestedBusinessDays.review} business days. Submission = {suggestedBusinessDays.submission} business days.
-        You can override these dates for this instance without changing the setup template.
-        Please ensure to include sufficient buffer days for timezone differences.
-      </div>
+      <PowerPanel
+        title="Timeline setup"
+        tone="emerald"
+      >
+        <div className="grid gap-4 md:grid-cols-3">
+          <PowerField label="Preparation due" hint="Assignee forecast due date.">
+            <input
+              type="date"
+              className={powerInputClassName}
+              value={gspForecastDue}
+              onChange={(e) => setGspForecastDue(e.target.value)}
+              disabled={!cycleId || preview}
+            />
+          </PowerField>
+          <PowerField label="Review due" hint="Approver review due date.">
+            <input
+              type="date"
+              className={powerInputClassName}
+              value={approverReviewDue}
+              onChange={(e) => setApproverReviewDue(e.target.value)}
+              disabled={!cycleId || preview}
+            />
+          </PowerField>
+          <PowerField label="Submission due" hint="Send forecast to TPM by this date.">
+            <input
+              type="date"
+              className={powerInputClassName}
+              value={tpmSubmissionDue}
+              onChange={(e) => setTpmSubmissionDue(e.target.value)}
+              disabled={!cycleId || preview}
+            />
+          </PowerField>
+        </div>
 
-      <div className="space-y-2 text-base">
-        <label className="block text-sm font-medium text-slate-700">Comments</label>
-        <textarea
-          className="w-full rounded-md border px-3 py-2.5 text-base"
-          rows={3}
-          placeholder="Add any notes for the assignee(s)."
-          value={emManagerComments}
-          onChange={(e) => setEmManagerComments(e.target.value)}
-          disabled={!cycleId || preview}
-        />
-      </div>
+        {cycleId ? (
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <PowerMetric
+              label="Preparation window"
+              value={updatedTimeline ? (
+                updatedTimeline.todayToPrepDays > 0 ? `${updatedTimeline.todayToPrepBusinessDays} business days` : updatedTimeline.todayToPrepDays === 0 ? "Due today" : `${Math.abs(updatedTimeline.todayToPrepBusinessDays)} overdue`
+              ) : "—"}
+              tone="sky"
+            />
+            <PowerMetric
+              label="Suggested prep"
+              value={`${suggestedBusinessDays.preparation} business days`}
+              tone="slate"
+            />
+            <PowerMetric
+              label="Review to submit"
+              value={updatedTimeline ? `${updatedTimeline.reviewToTpmDays} days` : "—"}
+              tone="emerald"
+            />
+          </div>
+        ) : null}
 
-      <div className="flex justify-end gap-2 text-sm">
-        <button
-          className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
-          type="button"
-          onClick={() => {
-            if (preview) return;
-            router.push("/");
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
-          type="button"
-          disabled={!cycleId}
-          onClick={() => {
-            if (preview) return;
-            persist(0);
-            router.push("/");
-          }}
-        >
-          Save draft
-        </button>
-        <button
-          className="rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
-          type="button"
-          disabled={!cycleId}
-          onClick={() => {
-            if (preview) return;
-            persist(1);
-            if (cycleId) router.push(`/phases/1?cycle=${encodeURIComponent(cycleId)}`);
-          }}
-        >
-          Initiate forecast instance
-        </button>
-      </div>
+        {cycleId ? (
+          <div className="mt-5">
+            <PowerInfoStrip tone="slate">
+              <span className="font-semibold text-slate-900">Preparation time given:</span>{" "}
+              {updatedTimeline ? (
+                updatedTimeline.todayToPrepDays > 0 ? (
+                  <>
+                    {updatedTimeline.todayToPrepDays} days / {updatedTimeline.todayToPrepBusinessDays} business days from today to preparation due.
+                  </>
+                ) : updatedTimeline.todayToPrepDays === 0 ? (
+                  <>0 days / 0 business days. Preparation due is today.</>
+                ) : (
+                  <>
+                    Overdue by {Math.abs(updatedTimeline.todayToPrepDays)} days / {Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days.
+                  </>
+                )
+              ) : (
+                <>—</>
+              )}
+            </PowerInfoStrip>
+          </div>
+        ) : null}
+
+        {dueDateChanges.length ? (
+          <div className="mt-5 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Updated due dates</div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {dueDateChanges.map((c) => (
+                <div key={c.label} className="border border-slate-300 bg-slate-50 px-4 py-3">
+                  <div className="text-sm font-semibold text-slate-900">{c.label}</div>
+                  <div className="mt-2 text-xs text-slate-600">Default</div>
+                  <div className="text-sm font-medium text-slate-900">{c.defaultValue}</div>
+                  <div className="mt-2 text-xs text-slate-600">Updated</div>
+                  <div className="text-sm font-medium text-slate-900">{c.updatedValue}</div>
+                </div>
+              ))}
+            </div>
+
+            {updatedTimeline ? (
+              <PowerInfoStrip tone={updatedTimeline.outOfOrder ? "amber" : "emerald"}>
+                Preparation: <span className="font-semibold">{updatedTimeline.todayToPrepDays > 0
+                  ? `${updatedTimeline.todayToPrepDays} days / ${updatedTimeline.todayToPrepBusinessDays} business days`
+                  : updatedTimeline.todayToPrepDays === 0
+                    ? "0 days / 0 business days"
+                    : `overdue by ${Math.abs(updatedTimeline.todayToPrepDays)} days / ${Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days`}</span>
+                <span className="mx-2 text-slate-300">|</span>
+                Review: <span className="font-semibold">{updatedTimeline.prepToReviewDays} days</span>
+                <span className="mx-2 text-slate-300">|</span>
+                Submission: <span className="font-semibold">{updatedTimeline.reviewToTpmDays} days</span>
+                {updatedTimeline.outOfOrder ? (
+                  <div className="mt-2">One or more due dates are out of order. Review must be on or after preparation, and TPM submission must be on or after review.</div>
+                ) : null}
+              </PowerInfoStrip>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-5 text-xs leading-6 text-slate-500">
+          Default milestone dates are auto-populated from the setup template: Preparation = {suggestedBusinessDays.preparation} business days, Review = {suggestedBusinessDays.review} business days, Submission = {suggestedBusinessDays.submission} business days. You can override these dates for this instance without changing the setup template.
+        </div>
+      </PowerPanel>
+
+      <PowerPanel
+        title="Manager notes"
+        tone="slate"
+      >
+        <PowerField label="Comments" hint="These notes will guide the assignee(s) when the instance is initiated.">
+          <textarea
+            className={powerTextAreaClassName}
+            rows={4}
+            placeholder="Add any notes for the assignee(s)."
+            value={emManagerComments}
+            onChange={(e) => setEmManagerComments(e.target.value)}
+            disabled={!cycleId || preview}
+          />
+        </PowerField>
+
+        <PowerCommandBar>
+          <button
+            className={powerGhostButtonClassName}
+            type="button"
+            onClick={() => {
+              if (preview) return;
+              router.push("/");
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            className={powerGhostButtonClassName}
+            type="button"
+            disabled={!cycleId}
+            onClick={() => {
+              if (preview) return;
+              persist(0);
+              router.push("/");
+            }}
+          >
+            Save draft
+          </button>
+          <button
+            className={powerPrimaryButtonClassName}
+            type="button"
+            disabled={!cycleId}
+            onClick={() => {
+              if (preview) return;
+              persist(1);
+              if (cycleId) router.push(`/phases/1?cycle=${encodeURIComponent(cycleId)}`);
+            }}
+          >
+            Initiate forecast instance
+          </button>
+        </PowerCommandBar>
+      </PowerPanel>
     </section>
   );
 }

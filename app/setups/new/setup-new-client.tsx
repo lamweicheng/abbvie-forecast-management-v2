@@ -24,6 +24,16 @@ import {
 } from "../../../lib/setups";
 import { BASE_CYCLES, generateCyclesForSetup } from "../../../lib/cycles";
 import { useSessionData } from "../../SessionDataProvider";
+import {
+  PowerCommandBar,
+  PowerField,
+  PowerInfoStrip,
+  PowerPanel,
+  PowerPill,
+  powerGhostButtonClassName,
+  powerInputClassName,
+  powerPrimaryButtonClassName
+} from "../../phases/phase-ui";
 
 function mergeById<T extends { id: string }>(base: T[], upsertsById: Record<string, T>) {
   const merged: T[] = base.map((r) => upsertsById[r.id] ?? r);
@@ -256,24 +266,45 @@ export function SetupNewClient() {
 
   const unitLower = recurrenceNoun(recurrence).toLowerCase();
   const periodHint = recurrence === "Monthly" ? "" : ` (defaults to final month of the ${unitLower})`;
+  const isEditing = Boolean(editingSetup);
+  const headerTitle = isEditing ? "Edit Setup" : "New Setup";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">{editingSetup ? "Edit Setup" : "New Setup"}</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Create a forecast template that generates forecast instances (monthly, quarterly, or yearly).
-        </p>
+    <div className="space-y-4">
+      <div className="border-b border-slate-500 bg-[#3a3a3a] px-4 py-4 text-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">{headerTitle}</h1>
+            <div className="mt-2 text-sm text-slate-200">
+              Configure the forecast template, scheduling rule, default timeline, and routing details.
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
+            <div className="border border-slate-500 bg-[#4a4a4a] px-3 py-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Mode</div>
+              <div className="mt-1 text-sm font-semibold text-white">{isEditing ? "Edit existing setup" : "Create new setup"}</div>
+            </div>
+            <div className="border border-slate-500 bg-[#4a4a4a] px-3 py-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Cadence</div>
+              <div className="mt-1 text-sm font-semibold text-white">{recurrence}</div>
+            </div>
+            <div className="border border-slate-500 bg-[#4a4a4a] px-3 py-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Products</div>
+              <div className="mt-1 text-sm font-semibold text-white">{products.length}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
+      <div className="space-y-5 bg-[#f4f4f4] px-4 py-4">
+        {error ? <div className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
 
-      <div className="rounded-xl border bg-white p-5 space-y-5">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Pillar</label>
+        <PowerPanel title="Setup details" tone="sky">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <PowerField label="Pillar">
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={pillar}
               onChange={(e) => setPillar(e.target.value as SetupRow["pillar"])}
             >
@@ -283,12 +314,11 @@ export function SetupNewClient() {
                 </option>
               ))}
             </select>
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Forecast Cadence</label>
+            <PowerField label="Forecast cadence">
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={recurrence}
               onChange={(e) => setRecurrence(e.target.value as Recurrence)}
             >
@@ -298,12 +328,11 @@ export function SetupNewClient() {
                 </option>
               ))}
             </select>
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">TPM Name</label>
+            <PowerField label="TPM name">
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={tpm}
               onChange={(e) => setTpm(e.target.value as (typeof TPM_OPTIONS)[number])}
             >
@@ -313,32 +342,32 @@ export function SetupNewClient() {
                 </option>
               ))}
             </select>
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">TPM Previous Company Name (if applicable)</label>
+            <PowerField label="TPM previous company name">
             <input
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={tpmPreviousCompanyName}
               onChange={(e) => setTpmPreviousCompanyName(e.target.value)}
               placeholder="e.g., Company X"
             />
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">TPM Location</label>
+            <PowerField label="TPM location">
             <input
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={tpmLocation}
               onChange={(e) => setTpmLocation(e.target.value)}
               placeholder="e.g., North America"
             />
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Products</label>
+            <PowerField
+              label="Products"
+              hint="Search an existing product or type a new one and press Enter to add it to the setup."
+            >
             <input
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={productDraft}
               onChange={(e) => setProductDraft(e.target.value)}
               placeholder="Search or type a product and press Enter"
@@ -355,9 +384,6 @@ export function SetupNewClient() {
                 <option key={p} value={p} />
               ))}
             </datalist>
-            <div className="text-xs text-slate-500">
-              Type to search existing products. Press Enter to add. New products are saved for future selections.
-            </div>
 
             {productSuggestions.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -365,7 +391,7 @@ export function SetupNewClient() {
                   <button
                     key={p}
                     type="button"
-                    className="rounded-md border bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    className="border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100"
                     onClick={() => {
                       addProduct(p);
                       setProductDraft("");
@@ -381,383 +407,362 @@ export function SetupNewClient() {
             {products.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {products.map((p) => (
-                  <span key={p} className="inline-flex items-center gap-2 rounded-full border bg-white px-2.5 py-1 text-xs text-slate-700">
+                  <PowerPill key={p}>
                     {p}
                     <button
                       type="button"
-                      className="rounded-full border px-1.5 py-0.5 text-xs text-slate-700 hover:bg-slate-50"
+                      className="border border-slate-300 bg-white px-1.5 py-0.5 text-xs text-slate-700 hover:bg-slate-50"
                       onClick={() => removeProduct(p)}
                       aria-label={`Remove ${p}`}
                       title="Remove"
                     >
                       ×
                     </button>
-                  </span>
+                  </PowerPill>
                 ))}
               </div>
             ) : null}
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Firm Period</label>
+            <PowerField label="Firm period">
             <input
               type="number"
               min={0}
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={firmPeriodRaw}
               onChange={(e) => setFirmPeriodRaw(e.target.value)}
               placeholder="(months)"
             />
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Rolling Forecast Horizon</label>
+            <PowerField label="Rolling forecast horizon">
             <input
               type="number"
               min={0}
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={rollingForecastHorizonRaw}
               onChange={(e) => setRollingForecastHorizonRaw(e.target.value)}
               placeholder="(months)"
             />
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Start date</label>
+            <PowerField label="Start date">
             <input
               type="date"
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
-          </div>
+            </PowerField>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">End date</label>
+            <PowerField label="End date">
             <input
               type="date"
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className={powerInputClassName}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
+            </PowerField>
           </div>
-        </div>
+        </PowerPanel>
 
-        <div className="rounded-lg border bg-slate-50 p-4 space-y-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">TPM Submission Scheduling Rule</div>
-            <div className="mt-1 text-xs text-slate-600">
-              Defines the default TPM submission due date anchor for each generated forecast instance.
-            </div>
-          </div>
+        <PowerPanel title="TPM submission scheduling rule" tone="slate">
+          <div className="space-y-4">
+            <PowerInfoStrip tone="slate">
+              Selected default TPM submission due date: <span className="font-semibold">{describeTpmSchedule(tpmSubmissionSchedule, recurrence)}</span>
+            </PowerInfoStrip>
 
-          {recurrence === "Quarterly" ? (
-            <div className="rounded-md border bg-white px-3 py-2 text-sm text-slate-700">
-              <div className="text-xs font-medium text-slate-600">Quarter alignment</div>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="text-sm text-slate-600">Apply rule to</span>
-                <select
-                  className="rounded-md border bg-white px-3 py-2 text-base"
-                  value={periodMonthInQuarter}
-                  onChange={(e) => setPeriodMonthInQuarter(Number(e.target.value) as QuarterMonthInPeriod)}
-                >
-                  {QUARTER_MONTH_IN_PERIOD_OPTIONS.map((v) => (
-                    <option key={v} value={v}>
-                      {v === 1 ? "First month" : v === 2 ? "Second month" : "Last month"}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-slate-600">of each quarter</span>
-              </div>
-            </div>
-          ) : null}
-
-          {recurrence === "Yearly" ? (
-            <div className="rounded-md border bg-white px-3 py-2 text-sm text-slate-700">
-              <div className="text-xs font-medium text-slate-600">Year alignment</div>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="text-sm text-slate-600">Apply rule in</span>
-                <select
-                  className="rounded-md border bg-white px-3 py-2 text-base"
-                  value={periodMonthOfYear}
-                  onChange={(e) => setPeriodMonthOfYear(Number(e.target.value) as MonthOfYear)}
-                >
-                  {MONTH_OF_YEAR_OPTIONS.map((m) => (
-                    <option key={m} value={m}>
-                      {MONTH_NAMES[m - 1]}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-slate-600">each year</span>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="grid gap-3">
-            <label className="flex items-start gap-3">
-              <input
-                type="radio"
-                name="tpmSchedule"
-                className="mt-1"
-                checked={scheduleType === "FixedCalendarDate"}
-                onChange={() => setScheduleType("FixedCalendarDate")}
-              />
-              <div className="flex-1 space-y-2">
-                <div className="text-sm font-medium text-slate-700">Fixed calendar day of period</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">Day of month{periodHint}</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={31}
-                    className="w-24 rounded-md border bg-white px-3 py-2 text-base"
-                    value={fixedDayOfMonth}
-                    onChange={(e) => setFixedDayOfMonth(Number(e.target.value))}
-                  />
-                  <span className="text-xs text-slate-500">Example: 25</span>
-                </div>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3">
-              <input
-                type="radio"
-                name="tpmSchedule"
-                className="mt-1"
-                checked={scheduleType === "NthWeekdayOfMonth"}
-                onChange={() => setScheduleType("NthWeekdayOfMonth")}
-              />
-              <div className="flex-1 space-y-2">
-                <div className="text-sm font-medium text-slate-700">Nth weekday of period</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-slate-600">Nth</span>
+            {recurrence === "Quarterly" ? (
+              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Quarter alignment</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span>Apply rule to</span>
                   <select
-                    className="rounded-md border bg-white px-3 py-2 text-base"
-                    value={nth}
-                    onChange={(e) => setNth(Number(e.target.value) as NthWeekday)}
+                    className={powerInputClassName}
+                    value={periodMonthInQuarter}
+                    onChange={(e) => setPeriodMonthInQuarter(Number(e.target.value) as QuarterMonthInPeriod)}
                   >
-                    {NTH_WEEKDAY_OPTIONS.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
+                    {QUARTER_MONTH_IN_PERIOD_OPTIONS.map((v) => (
+                      <option key={v} value={v}>
+                        {v === 1 ? "First month" : v === 2 ? "Second month" : "Last month"}
                       </option>
                     ))}
                   </select>
-                  <span className="text-sm text-slate-600">Weekday</span>
+                  <span>of each quarter</span>
+                </div>
+              </div>
+            ) : null}
+
+            {recurrence === "Yearly" ? (
+              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Year alignment</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span>Apply rule in</span>
                   <select
-                    className="rounded-md border bg-white px-3 py-2 text-base"
-                    value={nthWeekday}
-                    onChange={(e) => setNthWeekday(e.target.value as Weekday)}
+                    className={powerInputClassName}
+                    value={periodMonthOfYear}
+                    onChange={(e) => setPeriodMonthOfYear(Number(e.target.value) as MonthOfYear)}
                   >
-                    {WEEKDAY_OPTIONS.map((w) => (
-                      <option key={w} value={w}>
-                        {w}
+                    {MONTH_OF_YEAR_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {MONTH_NAMES[m - 1]}
                       </option>
                     ))}
                   </select>
-                  <span className="text-xs text-slate-500">Example: 3rd Thursday</span>
+                  <span>each year</span>
                 </div>
               </div>
-            </label>
+            ) : null}
 
-            <label className="flex items-start gap-3">
-              <input
-                type="radio"
-                name="tpmSchedule"
-                className="mt-1"
-                checked={scheduleType === "LastWeekdayOfMonth"}
-                onChange={() => setScheduleType("LastWeekdayOfMonth")}
-              />
-              <div className="flex-1 space-y-2">
-                <div className="text-sm font-medium text-slate-700">Last weekday of period</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-slate-600">Weekday</span>
-                  <select
-                    className="rounded-md border bg-white px-3 py-2 text-base"
-                    value={lastWeekday}
-                    onChange={(e) => setLastWeekday(e.target.value as Weekday)}
-                  >
-                    {WEEKDAY_OPTIONS.map((w) => (
-                      <option key={w} value={w}>
-                        {w}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-xs text-slate-500">Example: Last Thursday</span>
+            <div className="grid gap-3">
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="tpmSchedule"
+                  className="mt-1"
+                  checked={scheduleType === "FixedCalendarDate"}
+                  onChange={() => setScheduleType("FixedCalendarDate")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Fixed calendar day of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Day of month{periodHint}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      className="w-24 rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={fixedDayOfMonth}
+                      onChange={(e) => setFixedDayOfMonth(Number(e.target.value))}
+                    />
+                    <span className="text-xs text-slate-700">Example: 25</span>
+                  </div>
                 </div>
-              </div>
-            </label>
-          </div>
+              </label>
 
-          <div className="rounded-md border bg-white px-3 py-2 text-sm text-slate-700">
-            <span className="font-medium">Selected default TPM Submission Due Date:</span> {describeTpmSchedule(tpmSubmissionSchedule, recurrence)}
-          </div>
-        </div>
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="tpmSchedule"
+                  className="mt-1"
+                  checked={scheduleType === "NthWeekdayOfMonth"}
+                  onChange={() => setScheduleType("NthWeekdayOfMonth")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Nth weekday of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Nth</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={nth}
+                      onChange={(e) => setNth(Number(e.target.value) as NthWeekday)}
+                    >
+                      {NTH_WEEKDAY_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                    <span>Weekday</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={nthWeekday}
+                      onChange={(e) => setNthWeekday(e.target.value as Weekday)}
+                    >
+                      {WEEKDAY_OPTIONS.map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-slate-700">Example: 3rd Thursday</span>
+                  </div>
+                </div>
+              </label>
 
-        <div className="rounded-lg border bg-slate-50 p-4 space-y-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">
-              Default Period to Prepare, Review and Submit Forecast (Business Days)
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="tpmSchedule"
+                  className="mt-1"
+                  checked={scheduleType === "LastWeekdayOfMonth"}
+                  onChange={() => setScheduleType("LastWeekdayOfMonth")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Last weekday of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Weekday</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={lastWeekday}
+                      onChange={(e) => setLastWeekday(e.target.value as Weekday)}
+                    >
+                      {WEEKDAY_OPTIONS.map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-slate-700">Example: Last Thursday</span>
+                  </div>
+                </div>
+              </label>
             </div>
-            <div className="mt-1 text-xs text-slate-600">
-              TPM submission due is the anchor date. Review due and preparation due are backtracked from that anchor using business days
-              (Monday–Friday; no holiday calendar).
-              <div className="mt-1">Please ensure to include sufficient buffer days for timezone differences.</div>
+          </div>
+        </PowerPanel>
+
+        <PowerPanel title="Default business day timeline" tone="emerald">
+          <div className="space-y-4">
+            <PowerInfoStrip tone="slate">
+              Preparation = <span className="font-semibold">{defaultPreparationBusinessDays}</span> business days; Review = <span className="font-semibold">{defaultReviewBusinessDays}</span> business days; Submission = <span className="font-semibold">{defaultSubmissionBusinessDays}</span> business days.
+            </PowerInfoStrip>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+              <PowerField label="Preparation" hint="Business days for assignees to prepare.">
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  className={powerInputClassName}
+                  value={defaultPreparationBusinessDays}
+                  onChange={(e) => setDefaultPreparationBusinessDays(Number(e.target.value))}
+                />
+              </PowerField>
+
+              <PowerField label="Review" hint="Business days for reviewers to review.">
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  className={powerInputClassName}
+                  value={defaultReviewBusinessDays}
+                  onChange={(e) => setDefaultReviewBusinessDays(Number(e.target.value))}
+                />
+              </PowerField>
+
+              <PowerField label="Submission" hint="Business days for EM manager to submit to TPM.">
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  className={powerInputClassName}
+                  value={defaultSubmissionBusinessDays}
+                  onChange={(e) => setDefaultSubmissionBusinessDays(Number(e.target.value))}
+                />
+              </PowerField>
+            </div>
+
+            <div className="border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+              TPM submission due is the anchor date. Review due and preparation due are backtracked from that anchor using business days, Monday through Friday, with no holiday calendar.
             </div>
           </div>
+        </PowerPanel>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-slate-700">Preparation</label>
+        <PowerPanel title="Routing and access" tone="slate">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <PowerField label="Assignee(s)" hint="Comma-separated list.">
               <input
-                type="number"
-                min={0}
-                max={60}
-                className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
-                value={defaultPreparationBusinessDays}
-                onChange={(e) => setDefaultPreparationBusinessDays(Number(e.target.value))}
+                className={powerInputClassName}
+                value={assigneesRaw}
+                onChange={(e) => setAssigneesRaw(e.target.value)}
+                placeholder="Comma-separated"
               />
-              <div className="text-xs text-slate-500">Business days for assignees to prepare</div>
-            </div>
+            </PowerField>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-slate-700">Review</label>
+            <PowerField label="Approver(s)" hint="Comma-separated list.">
               <input
-                type="number"
-                min={0}
-                max={60}
-                className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
-                value={defaultReviewBusinessDays}
-                onChange={(e) => setDefaultReviewBusinessDays(Number(e.target.value))}
+                className={powerInputClassName}
+                value={approversRaw}
+                onChange={(e) => setApproversRaw(e.target.value)}
+                placeholder="Comma-separated"
               />
-              <div className="text-xs text-slate-500">Business days for reviewers to review.</div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-slate-700">Submission</label>
-              <input
-                type="number"
-                min={0}
-                max={60}
-                className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
-                value={defaultSubmissionBusinessDays}
-                onChange={(e) => setDefaultSubmissionBusinessDays(Number(e.target.value))}
-              />
-              <div className="text-xs text-slate-500">Business days for EM manager to submit to TPM</div>
-            </div>
+            </PowerField>
           </div>
 
-          <div className="rounded-md border bg-white px-3 py-2 text-sm text-slate-700">
-            <span className="font-medium">Default timeline:</span> Preparation = {defaultPreparationBusinessDays} business days; Review = {defaultReviewBusinessDays} business days; Submission = {defaultSubmissionBusinessDays} business days.
-          </div>
-        </div>
+          <PowerCommandBar>
+            <button
+              type="button"
+              className={powerGhostButtonClassName}
+              onClick={() => router.push("/")}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={powerPrimaryButtonClassName}
+              onClick={() => {
+                setError(null);
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Assignee(s)</label>
-          <input
-            className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
-            value={assigneesRaw}
-            onChange={(e) => setAssigneesRaw(e.target.value)}
-            placeholder="Comma-separated"
-          />
-          <div className="text-xs text-slate-500">Comma-separated list.</div>
-        </div>
+                const assignees = splitList(assigneesRaw);
+                const approvers = splitList(approversRaw);
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Approver(s)</label>
-          <input
-            className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
-            value={approversRaw}
-            onChange={(e) => setApproversRaw(e.target.value)}
-            placeholder="Comma-separated"
-          />
-          <div className="text-xs text-slate-500">Comma-separated list.</div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
-          <button
-            type="button"
-            className="rounded-md border bg-white px-4 py-2.5 text-base font-medium text-slate-700 hover:bg-slate-50"
-            onClick={() => router.push("/")}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="rounded-md bg-slate-900 px-4 py-2.5 text-base font-medium text-white hover:bg-slate-800"
-            onClick={() => {
-              setError(null);
-
-              const assignees = splitList(assigneesRaw);
-              const approvers = splitList(approversRaw);
-
-              if (!tpm.trim() || products.length === 0) {
-                setError("TPM and at least one Product are required.");
-                return;
-              }
-              if (!startDate || !endDate) {
-                setError("Start date and end date are required.");
-                return;
-              }
-              if (endDate < startDate) {
-                setError("End date must be on/after the start date.");
-                return;
-              }
-              if (assignees.length === 0) {
-                setError("At least one assignee is required.");
-                return;
-              }
-              if (approvers.length === 0) {
-                setError("At least one approver is required.");
-                return;
-              }
-
-              const id = editingSetup ? editingSetup.id : nextSetupId(allSetups.map((s) => s.id));
-              const firmPeriodParsed = firmPeriodRaw.trim() === "" ? null : Number(firmPeriodRaw);
-              const rollingForecastHorizonParsed = rollingForecastHorizonRaw.trim() === "" ? null : Number(rollingForecastHorizonRaw);
-
-              const setup: SetupRow = {
-                id,
-                pillar,
-                tpm: tpm.trim(),
-                products: products.map((p) => p.trim()).filter(Boolean),
-                tpmLocation: tpmLocation.trim() ? tpmLocation.trim() : undefined,
-                tpmPreviousCompanyName: tpmPreviousCompanyName.trim() ? tpmPreviousCompanyName.trim() : undefined,
-                firmPeriod:
-                  typeof firmPeriodParsed === "number" && Number.isFinite(firmPeriodParsed)
-                    ? Math.max(0, Math.floor(firmPeriodParsed))
-                    : null,
-                rollingForecastHorizon:
-                  typeof rollingForecastHorizonParsed === "number" && Number.isFinite(rollingForecastHorizonParsed)
-                    ? Math.max(0, Math.floor(rollingForecastHorizonParsed))
-                  : null,
-                assignees,
-                approvers,
-                recurrence,
-                startDate,
-                endDate,
-                tpmSubmissionSchedule,
-                defaultBusinessDays: {
-                  preparation: Math.max(0, Math.floor(defaultPreparationBusinessDays)),
-                  review: Math.max(0, Math.floor(defaultReviewBusinessDays)),
-                  submission: Math.max(0, Math.floor(defaultSubmissionBusinessDays))
+                if (!tpm.trim() || products.length === 0) {
+                  setError("TPM and at least one Product are required.");
+                  return;
                 }
-              };
+                if (!startDate || !endDate) {
+                  setError("Start date and end date are required.");
+                  return;
+                }
+                if (endDate < startDate) {
+                  setError("End date must be on/after the start date.");
+                  return;
+                }
+                if (assignees.length === 0) {
+                  setError("At least one assignee is required.");
+                  return;
+                }
+                if (approvers.length === 0) {
+                  setError("At least one approver is required.");
+                  return;
+                }
 
-              upsertSetup(setup);
+                const id = editingSetup ? editingSetup.id : nextSetupId(allSetups.map((s) => s.id));
+                const firmPeriodParsed = firmPeriodRaw.trim() === "" ? null : Number(firmPeriodRaw);
+                const rollingForecastHorizonParsed = rollingForecastHorizonRaw.trim() === "" ? null : Number(rollingForecastHorizonRaw);
 
-              // For new setups, generate instances immediately.
-              // For edits, we only update the template; existing instances remain unchanged unless manually edited.
-              if (!editingSetup) {
-                const cycles = generateCyclesForSetup(setup, allCycles.map((c) => c.id));
-                for (const c of cycles) upsertCycle(c);
-              }
+                const setup: SetupRow = {
+                  id,
+                  pillar,
+                  tpm: tpm.trim(),
+                  products: products.map((p) => p.trim()).filter(Boolean),
+                  tpmLocation: tpmLocation.trim() ? tpmLocation.trim() : undefined,
+                  tpmPreviousCompanyName: tpmPreviousCompanyName.trim() ? tpmPreviousCompanyName.trim() : undefined,
+                  firmPeriod:
+                    typeof firmPeriodParsed === "number" && Number.isFinite(firmPeriodParsed)
+                      ? Math.max(0, Math.floor(firmPeriodParsed))
+                      : null,
+                  rollingForecastHorizon:
+                    typeof rollingForecastHorizonParsed === "number" && Number.isFinite(rollingForecastHorizonParsed)
+                      ? Math.max(0, Math.floor(rollingForecastHorizonParsed))
+                    : null,
+                  assignees,
+                  approvers,
+                  recurrence,
+                  startDate,
+                  endDate,
+                  tpmSubmissionSchedule,
+                  defaultBusinessDays: {
+                    preparation: Math.max(0, Math.floor(defaultPreparationBusinessDays)),
+                    review: Math.max(0, Math.floor(defaultReviewBusinessDays)),
+                    submission: Math.max(0, Math.floor(defaultSubmissionBusinessDays))
+                  }
+                };
 
-              router.push(`/setups/${encodeURIComponent(id)}`);
-            }}
-          >
-            {editingSetup ? "Save changes" : "Create Setup"}
-          </button>
-        </div>
+                upsertSetup(setup);
+
+                if (!editingSetup) {
+                  const cycles = generateCyclesForSetup(setup, allCycles.map((c) => c.id));
+                  for (const c of cycles) upsertCycle(c);
+                }
+
+                router.push(`/setups/${encodeURIComponent(id)}`);
+              }}
+            >
+              {editingSetup ? "Save changes" : "Create Setup"}
+            </button>
+          </PowerCommandBar>
+        </PowerPanel>
       </div>
     </div>
   );

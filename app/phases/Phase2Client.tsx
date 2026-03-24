@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
 import { useSessionCycles } from "../SessionDataProvider";
+import {
+  PowerCommandBar,
+  PowerField,
+  PowerInfoStrip,
+  PowerPanel,
+  powerGhostButtonClassName,
+  powerSuccessButtonClassName,
+  powerTextAreaClassName,
+  powerWarningButtonClassName
+} from "./phase-ui";
 
 export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; preview?: boolean }) {
   const router = useRouter();
@@ -35,51 +45,54 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
   };
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-8">
+    <section className="space-y-5">
       {!cycleId ? (
-        <div className="rounded-lg border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <PowerInfoStrip tone="amber">
           Open Phase 3 from an instance row to see details.
-        </div>
+        </PowerInfoStrip>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 text-base">
-        <div className="space-y-1">
-          <div className="text-sm font-medium text-slate-700">Forecast file</div>
-          <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-600">[Link to uploaded forecast file]</div>
-        </div>
-        <div className="space-y-1">
-          <div className="text-sm font-medium text-slate-700">Due dates</div>
-          <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-600">
-            Review due: <span className="font-medium">{cycle?.approverReviewDue || "YYYY-MM-DD"}</span>
+      <PowerPanel
+        title="Approval review"
+        tone="emerald"
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="border border-slate-300 bg-slate-50 px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Forecast file</div>
+            <div className="mt-2 text-sm text-slate-700">[Link to uploaded forecast file]</div>
+          </div>
+          <div className="border border-slate-300 bg-slate-50 px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Review due</div>
+            <div className="mt-2 text-sm font-medium text-slate-900">{cycle?.approverReviewDue || "YYYY-MM-DD"}</div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-slate-700">Assignee comments</div>
-        <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          {cycle?.assigneeComments?.trim() ? cycle.assigneeComments : <span className="text-slate-500">—</span>}
-        </div>
-      </div>
-
-      <div className="space-y-3 text-sm">
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Comments to assignee(s)</label>
-          <div className="text-xs text-slate-500">
-            If changes are requested by the approver or TPM, ad-hoc meetings or discussions can be held externally (outside this tool) to align.
+        <div className="mt-5 border border-slate-300 bg-slate-50 px-4 py-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Assignee comments</div>
+          <div className="mt-2 text-sm text-slate-700">
+            {cycle?.assigneeComments?.trim() ? cycle.assigneeComments : <span className="text-slate-500">—</span>}
           </div>
-          <textarea
-            className="w-full rounded-md border px-3 py-2.5 text-base"
-            rows={3}
-            placeholder="Summarise any required changes or rationale for approval."
-            disabled={preview}
-            value={commentsToAssignees}
-            onChange={(e) => setCommentsToAssignees(e.target.value)}
-          />
         </div>
-        <div className="flex justify-end gap-2 text-sm">
+
+        <div className="mt-5">
+          <PowerField
+            label="Comments to assignee(s)"
+            hint="If changes are requested by the approver or TPM, follow-up conversations can happen outside this tool and the summary should be captured here."
+          >
+            <textarea
+              className={powerTextAreaClassName}
+              rows={4}
+              placeholder="Summarise any required changes or rationale for approval."
+              disabled={preview}
+              value={commentsToAssignees}
+              onChange={(e) => setCommentsToAssignees(e.target.value)}
+            />
+          </PowerField>
+        </div>
+
+        <PowerCommandBar>
           <button
-            className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
+            className={powerGhostButtonClassName}
             type="button"
             onClick={saveDraft}
             disabled={preview || !cycleId}
@@ -87,7 +100,7 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
             Save draft
           </button>
           <button
-            className="rounded-md border px-4 py-2 text-amber-800 border-amber-300 bg-amber-50 hover:bg-amber-100"
+            className={powerWarningButtonClassName}
             type="button"
             onClick={() => {
               if (preview) return;
@@ -99,7 +112,7 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
             Send back to assignee(s)
           </button>
           <button
-            className="rounded-md bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
+            className={powerSuccessButtonClassName}
             type="button"
             disabled={preview || !cycleId || !cycle}
             onClick={() => {
@@ -115,8 +128,8 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
           >
             Approve forecast
           </button>
-        </div>
-      </div>
+        </PowerCommandBar>
+      </PowerPanel>
     </section>
   );
 }

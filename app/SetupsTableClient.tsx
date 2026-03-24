@@ -90,15 +90,15 @@ export function SetupsTableClient() {
   }, [overviewOpen]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-xl font-semibold text-slate-900">Setups</h3>
+    <div className="space-y-0">
+      <div className="flex flex-col gap-3 border-b border-slate-500 bg-[#3a3a3a] px-4 py-4 text-white lg:flex-row lg:items-center lg:justify-between">
+        <div className="text-center text-3xl font-semibold tracking-tight lg:flex-1 lg:text-center">Forecast Setups</div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:justify-end">
           <button
             type="button"
             onClick={() => setOverviewOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white text-base font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-slate-200 bg-transparent text-lg font-semibold text-white hover:bg-white/10"
             aria-label="Process overview information"
             title="Process overview"
           >
@@ -107,7 +107,7 @@ export function SetupsTableClient() {
 
           <button
             type="button"
-            className="rounded-md border bg-white px-5 py-2.5 text-base font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-sm border border-slate-200 bg-transparent px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
             onClick={() => router.push(`/analytics`)}
           >
             Analytics &amp; Reporting
@@ -115,10 +115,10 @@ export function SetupsTableClient() {
 
           <button
             type="button"
-            className="rounded-md bg-slate-900 px-5 py-2.5 text-base font-medium text-white hover:bg-slate-800"
+            className="rounded-sm border border-white bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
             onClick={() => router.push(`/setups/new`)}
           >
-            New Setup
+            Create New Setup
           </button>
         </div>
       </div>
@@ -135,14 +135,14 @@ export function SetupsTableClient() {
           }}
         >
           <div
-            className="flex w-full max-w-3xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border bg-white shadow-sm"
+            className="flex w-full max-w-4xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-sm border border-slate-400 bg-white shadow-sm"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-              <div className="text-sm font-semibold text-slate-900">Process overview</div>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-300 bg-[#3a3a3a] px-4 py-3">
+              <div className="text-sm font-semibold text-white">Process overview</div>
               <button
                 type="button"
-                className="rounded-md border px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                className="rounded-sm border border-slate-200 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10"
                 onClick={() => {
                   setOverviewOpen(false);
                   setScreenExamplePhaseId(null);
@@ -151,7 +151,7 @@ export function SetupsTableClient() {
                 Close
               </button>
             </div>
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 overscroll-contain">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-[#f4f4f4] p-4 overscroll-contain">
               <div className="text-sm text-slate-600 space-y-2">
                 <div>
                   Setups define a recurring forecast template (Pillar, TPM, Products, default assignee(s)/approver(s), cadence, and TPM submission schedule rule).
@@ -168,8 +168,8 @@ export function SetupsTableClient() {
                       onClick={() => setScreenExamplePhaseId(stage.id)}
                       className={
                         screenExamplePhaseId === stage.id
-                          ? "w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-left"
-                          : "w-full rounded-lg border px-3 py-2 text-left hover:bg-slate-50"
+                          ? "w-full border border-slate-500 bg-white px-3 py-2 text-left"
+                          : "w-full border border-slate-300 bg-white px-3 py-2 text-left hover:bg-slate-50"
                       }
                     >
                       <div className="text-sm font-medium text-slate-900">{stage.name}</div>
@@ -198,12 +198,12 @@ export function SetupsTableClient() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <div className="grid grid-cols-1 items-end gap-5 sm:grid-cols-2 lg:min-w-max lg:grid-cols-[9rem_9rem_10rem_10rem]">
+      <div className="border-b border-slate-300 bg-[#d9d9d9] px-4 py-4">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-[10rem_12rem_12rem_12rem]">
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Pillar</label>
+            <label className="block text-sm font-semibold text-slate-800">Pillar</label>
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className="w-full rounded-sm border border-slate-500 bg-white px-3 py-2.5 text-base text-slate-900"
               value={pillar}
               onChange={(e) => setPillar(e.target.value)}
             >
@@ -217,9 +217,9 @@ export function SetupsTableClient() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">TPM</label>
+            <label className="block text-sm font-semibold text-slate-800">TPM</label>
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className="w-full rounded-sm border border-slate-500 bg-white px-3 py-2.5 text-base text-slate-900"
               value={tpm}
               onChange={(e) => setTpm(e.target.value)}
             >
@@ -233,9 +233,9 @@ export function SetupsTableClient() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Product</label>
+            <label className="block text-sm font-semibold text-slate-800">Product</label>
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className="w-full rounded-sm border border-slate-500 bg-white px-3 py-2.5 text-base text-slate-900"
               value={product}
               onChange={(e) => setProduct(e.target.value)}
             >
@@ -249,9 +249,9 @@ export function SetupsTableClient() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Forecast Cadence</label>
+            <label className="block text-sm font-semibold text-slate-800">Forecast Cadence</label>
             <select
-              className="w-full rounded-md border bg-white px-3 py-2.5 text-base"
+              className="w-full rounded-sm border border-slate-500 bg-white px-3 py-2.5 text-base text-slate-900"
               value={recurrence}
               onChange={(e) => setRecurrence(e.target.value as RecurrenceFilterValue)}
             >
@@ -266,35 +266,35 @@ export function SetupsTableClient() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full divide-y">
-          <thead className="bg-slate-50">
+      <div className="overflow-x-auto bg-white">
+        <table className="min-w-full border-collapse">
+          <thead className="bg-[#708596] text-white">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Pillar</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">TPM</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Products</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Forecast Cadence</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Window</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Instances</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Completed</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Open</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Pillar</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">TPM</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Products</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Forecast Cadence</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Window</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-right text-sm font-semibold">Instances</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-right text-sm font-semibold">Completed</th>
+              <th className="px-4 py-3 text-right text-sm font-semibold">Open</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {filtered.map((s) => (
               <tr
                 key={s.id}
-                className="cursor-pointer hover:bg-slate-50"
+                className="cursor-pointer border-b-2 border-slate-400 bg-white hover:bg-slate-50"
                 onClick={() => router.push(`/setups/${encodeURIComponent(s.id)}`)}
               >
-                <td className="px-4 py-3 text-sm text-slate-700">{s.pillar}</td>
-                <td className="px-4 py-3 text-sm text-slate-700">{s.tpm}</td>
-                <td className="px-4 py-3 text-sm text-slate-700">{formatProductsLabel(s.products)}</td>
-                <td className="px-4 py-3 text-sm text-slate-700">{s.recurrence}</td>
-                <td className="px-4 py-3 text-sm text-slate-700">{s.startDate} → {s.endDate}</td>
-                <td className="px-4 py-3 text-right text-sm text-slate-700">{s.cycleCount}</td>
-                <td className="px-4 py-3 text-right text-sm text-slate-700">{s.completedCount}</td>
-                <td className="px-4 py-3 text-right text-sm text-slate-700">{s.openCount}</td>
+                <td className="px-4 py-4 text-sm text-slate-800">{s.pillar}</td>
+                <td className="px-4 py-4 text-sm text-slate-800">{s.tpm}</td>
+                <td className="px-4 py-4 text-sm text-slate-800">{formatProductsLabel(s.products)}</td>
+                <td className="px-4 py-4 text-sm text-slate-800">{s.recurrence}</td>
+                <td className="px-4 py-4 text-sm text-slate-800">{s.startDate} - {s.endDate}</td>
+                <td className="px-4 py-4 text-right text-sm text-slate-800">{s.cycleCount}</td>
+                <td className="px-4 py-4 text-right text-sm text-slate-800">{s.completedCount}</td>
+                <td className="px-4 py-4 text-right text-sm text-slate-800">{s.openCount}</td>
               </tr>
             ))}
 

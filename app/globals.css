@@ -8,6 +8,6 @@
 }
 
 body {
-  background: rgb(var(--bg));
+  background: #efefef;
   color: #0f172a; /* slate-900 */
 }

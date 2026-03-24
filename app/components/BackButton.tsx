@@ -14,7 +14,7 @@ export default function BackButton({
   return (
     <button
       type="button"
-      className={`inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${className}`}
+      className={`inline-flex items-center rounded-sm border border-white px-3 py-2 text-sm font-semibold text-white hover:bg-white/10 ${className}`}
       onClick={() => router.back()}
     >
       ← {label}

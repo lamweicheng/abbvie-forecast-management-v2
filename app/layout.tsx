@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">
-        <div className="mx-auto max-w-8xl p-10">
+      <body className="min-h-screen bg-[#efefef] antialiased">
+        <div className="min-h-screen w-full">
           <SessionDataProvider>{children}</SessionDataProvider>
         </div>
       </body>

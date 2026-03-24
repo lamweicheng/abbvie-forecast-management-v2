@@ -3,31 +3,33 @@ import { SetupsTableClient } from './SetupsTableClient';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-50 py-6">
-      <div className="mx-auto max-w-7xl px-4 space-y-8">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/AbbVie_logo.svg%20(1).png"
-              alt="AbbVie"
-              width={140}
-              height={40}
-              priority
-            />
-            <div>
-              <h1 className="text-3xl font-semibold text-slate-900">Forecast Management System</h1>
-              <p className="mt-1 text-base text-slate-600">
-                End-to-end view of the AbbVie forecast management process, from preparation to storing.
-              </p>
+    <main className="min-h-screen bg-[#efefef] py-0">
+      <div className="mx-auto max-w-[1600px]">
+        <header className="border-b border-slate-700 bg-[#343434] px-4 py-4 text-white shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <Image
+                src="/AbbVie_logo.svg%20(1).png"
+                alt="AbbVie"
+                width={132}
+                height={36}
+                priority
+              />
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">Forecast Management System</h1>
+                <p className="mt-1 text-sm text-slate-300">
+                  Core mockup aligned to the previous Power Apps-style program layout.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col items-start md:items-end gap-2 text-xs text-slate-500">
-            <span className="uppercase tracking-wide">Mock-up only</span>
-          
+
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-300">
+              Mock-up only
+            </div>
           </div>
         </header>
 
-        <section>
+        <section className="px-0 py-0">
           <SetupsTableClient />
         </section>
       </div>

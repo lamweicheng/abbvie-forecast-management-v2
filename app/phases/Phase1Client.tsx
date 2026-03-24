@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
 import { useSessionCycles } from "../SessionDataProvider";
+import {
+  PowerCommandBar,
+  PowerField,
+  PowerInfoStrip,
+  PowerPanel,
+  powerFileClassName,
+  powerGhostButtonClassName,
+  powerPrimaryButtonClassName,
+  powerTextAreaClassName
+} from "./phase-ui";
 
 export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; preview?: boolean }) {
   const router = useRouter();
@@ -36,18 +46,19 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
   };
 
   return (
-    <section className="rounded-xl border bg-white p-7 shadow-sm space-y-8">
-      <div className="space-y-4 text-base">
-        {cycle?.tpmOutcome === "changes_requested" && cycle?.tpmChangeRequest?.trim() ? (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <div className="mb-1 text-sm font-medium">TPM requested changes</div>
-            <p className="text-sm text-amber-900">{cycle.tpmChangeRequest}</p>
-            <p className="mt-1 text-xs text-amber-900/80">
-              Update the forecast and re-submit to continue through review &amp; approval.
-            </p>
-          </div>
-        ) : null}
+    <section className="space-y-5">
+      {cycle?.tpmOutcome === "changes_requested" && cycle?.tpmChangeRequest?.trim() ? (
+        <PowerInfoStrip tone="amber">
+          <div className="font-semibold">TPM requested changes</div>
+          <p className="mt-1">{cycle.tpmChangeRequest}</p>
+          <p className="mt-1 text-xs">Update the forecast and re-submit to continue through review and approval.</p>
+        </PowerInfoStrip>
+      ) : null}
 
+      <PowerPanel
+        title="Forecast preparation"
+        tone="sky"
+      >
         <div className="flex justify-end">
           <button
             type="button"
@@ -55,40 +66,42 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
               if (preview) return;
               setShowFeedback((prev) => !prev);
             }}
-            className="rounded-md border px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+            className={powerGhostButtonClassName}
             disabled={preview}
           >
             {showFeedback ? "Hide reviewer feedback" : "Show reviewer feedback"}
           </button>
         </div>
 
-        {showFeedback && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <div className="mb-1 text-sm font-medium">Reviewer feedback</div>
-            <p>Example: Please update assumptions for Q3 and resubmit the forecast.</p>
+        {showFeedback ? (
+          <div className="mt-4">
+            <PowerInfoStrip tone="amber">
+              <div className="font-semibold">Reviewer feedback</div>
+              <p className="mt-1">Example: Please update assumptions for Q3 and resubmit the forecast.</p>
+            </PowerInfoStrip>
           </div>
-        )}
+        ) : null}
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Upload prepared forecast file</label>
-          <input type="file" className="text-sm" disabled={preview} />
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <PowerField label="Upload prepared forecast file" hint="Upload the working forecast artifact for approval.">
+            <input type="file" className={powerFileClassName} disabled={preview} />
+          </PowerField>
+
+          <PowerField label="Comments" hint="Add context for reviewers before submitting to Phase 3.">
+            <textarea
+              className={powerTextAreaClassName}
+              rows={6}
+              placeholder="Add any notes for approvers to review."
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              disabled={preview}
+            />
+          </PowerField>
         </div>
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Comments</label>
-          <textarea
-            className="w-full rounded-md border px-3 py-2.5 text-base"
-            rows={3}
-            placeholder="Add any notes for approvers to review."
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            disabled={preview}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 text-sm">
+        <PowerCommandBar>
           <button
-            className="rounded-md border px-4 py-2 text-slate-700 hover:bg-slate-50"
+            className={powerGhostButtonClassName}
             type="button"
             disabled={preview || !cycleId}
             onClick={saveDraft}
@@ -96,7 +109,7 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
             Save draft
           </button>
           <button
-            className="rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
+            className={powerPrimaryButtonClassName}
             type="button"
             disabled={preview}
             onClick={() => {
@@ -120,8 +133,8 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
           >
             Submit for Phase 3 review
           </button>
-        </div>
-      </div>
+        </PowerCommandBar>
+      </PowerPanel>
     </section>
   );
 }
