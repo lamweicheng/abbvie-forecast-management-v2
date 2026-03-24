@@ -36,14 +36,12 @@ export function PhaseScreen({
   cycleId,
   phaseName,
   instruction,
-  progressPhaseIdOverride,
   preview = false
 }: {
   phaseId: number;
   cycleId?: string;
   phaseName?: string;
   instruction?: string;
-  progressPhaseIdOverride?: number;
   preview?: boolean;
 }) {
   const { cyclesById } = useSessionCycles();
@@ -78,7 +76,6 @@ export function PhaseScreen({
   const isHistoricalPhase = hasWorkflowState && phaseId < actualCurrentPhaseId;
   const isFuturePhase = hasWorkflowState && phaseId > actualCurrentPhaseId;
   const effectivePreview = preview || isHistoricalPhase;
-  const activePhaseName = PHASES.find((p) => p.id === actualCurrentPhaseId)?.name ?? `Phase ${actualCurrentPhaseId + 1}`;
   const shellTone = effectivePreview
     ? "border-amber-200 bg-amber-50 text-amber-900"
     : isFuturePhase
