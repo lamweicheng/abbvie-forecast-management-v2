@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PHASES } from "../../lib/phases";
+import { forecastFolderRoute } from "../../lib/forecastFolders";
 import {
   BASE_SETUPS,
   DEFAULT_BUSINESS_DAYS,
@@ -29,7 +31,7 @@ function currentPhaseBadge(row: ForecastCycleRow) {
   if (completed) {
     return {
       label: "Completed",
-      detail: "Forecast PDF available",
+      detail: "Forecast folder available",
       cls: "border-emerald-300 bg-emerald-50 text-emerald-900"
     };
   }
@@ -206,7 +208,7 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Period</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Due Date</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Current Forecast Phase</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast File</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Folder</th>
             </tr>
           </thead>
           <tbody>
@@ -240,15 +242,13 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                 </td>
                 <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">
                   {c.forecastPdfHref ? (
-                    <a
+                    <Link
                       className="font-medium text-slate-900 underline"
-                      href={c.forecastPdfHref}
-                      target="_blank"
-                      rel="noreferrer"
+                      href={forecastFolderRoute(c.id)}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      View
-                    </a>
+                      Open folder
+                    </Link>
                   ) : (
                     <span className="text-slate-400">—</span>
                   )}

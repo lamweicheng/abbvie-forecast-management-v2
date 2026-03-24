@@ -20,6 +20,7 @@ import {
 } from "./phase-ui";
 import { PHASES } from "../../lib/phases";
 import { BASE_CYCLES, type ForecastCycleRow } from "../../lib/cycles";
+import { forecastFolderName, forecastFolderRoute } from "../../lib/forecastFolders";
 import { formatProductsLabel } from "../../lib/setups";
 import { useSessionCycles } from "../SessionDataProvider";
 
@@ -391,8 +392,19 @@ function Phase3Client({
           </PowerInfoStrip>
 
           <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Approved forecast file</div>
-            <div className="mt-2">[Link / button to download approved forecast file]</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Approved forecast folder</div>
+            <div className="mt-2 space-y-1">
+              {cycleId ? (
+                <>
+                  <Link href={forecastFolderRoute(cycleId)} className="font-medium text-slate-900 underline underline-offset-2">
+                    Open approved forecast folder
+                  </Link>
+                  <div className="text-xs text-slate-500">{forecastFolderName(cycle)}</div>
+                </>
+              ) : (
+                <span className="text-slate-500">Forecast folder link will appear once the instance is available.</span>
+              )}
+            </div>
           </div>
 
           <div className="border border-slate-300 bg-white px-4 py-4">
@@ -405,7 +417,7 @@ function Phase3Client({
                 checked={sentToTpm}
                 onChange={(e) => setSentToTpm(e.target.checked)}
               />
-              I have sent the forecast file to TPM via Outlook
+              I have sent the forecast folder link to TPM via Outlook
             </label>
           </div>
 
@@ -596,7 +608,7 @@ function Phase4Client({
                   tpmOutcome,
                   tpmChangeRequest: undefined,
                   phaseId: 4,
-                  forecastPdfHref: cycle?.forecastPdfHref ?? "/sample-forecast.pdf",
+                  forecastPdfHref: forecastFolderRoute(cycleId),
                   closed: true
                 });
                 router.push("/");

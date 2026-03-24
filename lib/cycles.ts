@@ -3,6 +3,7 @@ import { DEFAULT_BUSINESS_DAYS } from "./setups";
 import { BASE_SETUPS } from "./setups";
 import { formatProductsLabel } from "./setups";
 import { PILLARS } from "./constants";
+import { forecastFolderRoute } from "./forecastFolders";
 
 export type CyclePhaseId = 0 | 1 | 2 | 3 | 4;
 
@@ -297,7 +298,7 @@ function seededCycles(): ForecastCycleRow[] {
       requestedDate: "2026-01-03",
       emManagerComments: "Please align assumptions with last cycle and highlight key drivers.",
       phaseId: 4,
-      forecastPdfHref: "/sample-forecast.pdf",
+      forecastPdfHref: forecastFolderRoute(s1[0].id),
       closed: true
     } satisfies Partial<ForecastCycleRow>);
   }

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
+import { forecastFolderName, forecastFolderRoute } from "../../lib/forecastFolders";
 import { useSessionCycles } from "../SessionDataProvider";
 import {
   PowerCommandBar,
@@ -58,8 +60,19 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="border border-slate-300 bg-slate-50 px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Forecast file</div>
-            <div className="mt-2 text-sm text-slate-700">[Link to uploaded forecast file]</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Forecast folder</div>
+            <div className="mt-2 text-sm text-slate-700">
+              {cycleId ? (
+                <>
+                  <Link href={forecastFolderRoute(cycleId)} className="font-medium text-slate-900 underline underline-offset-2">
+                    Open submitted forecast folder
+                  </Link>
+                  <div className="mt-1 text-xs text-slate-500">{forecastFolderName(cycle)}</div>
+                </>
+              ) : (
+                <span className="text-slate-500">Open Phase 3 from an instance row to view the forecast folder.</span>
+              )}
+            </div>
           </div>
           <div className="border border-slate-300 bg-slate-50 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Review due</div>
