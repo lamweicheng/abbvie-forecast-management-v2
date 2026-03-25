@@ -64,10 +64,10 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
             <div className="mt-2 text-sm text-slate-700">
               {cycleId ? (
                 <>
-                  <Link href={forecastFolderRoute(cycleId)} className="font-medium text-slate-900 underline underline-offset-2">
-                    Open submitted forecast folder
+                  <Link href={forecastFolderRoute(cycleId, "draft")} className="font-medium text-slate-900 underline underline-offset-2">
+                    Open submitted draft folder
                   </Link>
-                  <div className="mt-1 text-xs text-slate-500">{forecastFolderName(cycle)}</div>
+                  <div className="mt-1 text-xs text-slate-500">{forecastFolderName(cycle, "draft")}</div>
                 </>
               ) : (
                 <span className="text-slate-500">Open Phase 3 from an instance row to view the forecast folder.</span>

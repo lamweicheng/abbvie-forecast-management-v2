@@ -207,12 +207,16 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     const reviewToTpmDays = diffDays(approverReviewDue, tpmSubmissionDue);
     const todayToPrepDays = diffDays(today, gspForecastDue);
     const todayToPrepBusinessDays = diffBusinessDays(today, gspForecastDue);
+    const prepToReviewBusinessDays = diffBusinessDays(gspForecastDue, approverReviewDue);
+    const reviewToTpmBusinessDays = diffBusinessDays(approverReviewDue, tpmSubmissionDue);
 
     const outOfOrder = prepToReviewDays < 0 || reviewToTpmDays < 0;
 
     return {
       prepToReviewDays,
+      prepToReviewBusinessDays,
       reviewToTpmDays,
+      reviewToTpmBusinessDays,
       todayToPrepDays,
       todayToPrepBusinessDays,
       outOfOrder
@@ -415,20 +419,20 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
         {cycleId ? (
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <PowerMetric
-              label="Preparation window"
+              label="Time to prepare"
               value={updatedTimeline ? (
                 updatedTimeline.todayToPrepDays > 0 ? `${updatedTimeline.todayToPrepBusinessDays} business days` : updatedTimeline.todayToPrepDays === 0 ? "Due today" : `${Math.abs(updatedTimeline.todayToPrepBusinessDays)} overdue`
               ) : "—"}
               tone="sky"
             />
             <PowerMetric
-              label="Suggested prep"
-              value={`${suggestedBusinessDays.preparation} business days`}
+              label="Time to review"
+              value={updatedTimeline ? `${updatedTimeline.prepToReviewBusinessDays} business days` : "—"}
               tone="slate"
             />
             <PowerMetric
-              label="Review to submit"
-              value={updatedTimeline ? `${updatedTimeline.reviewToTpmDays} days` : "—"}
+              label="Time to submit"
+              value={updatedTimeline ? `${updatedTimeline.reviewToTpmBusinessDays} business days` : "—"}
               tone="emerald"
             />
           </div>
@@ -480,9 +484,9 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
                     ? "0 days / 0 business days"
                     : `overdue by ${Math.abs(updatedTimeline.todayToPrepDays)} days / ${Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days`}</span>
                 <span className="mx-2 text-slate-300">|</span>
-                Review: <span className="font-semibold">{updatedTimeline.prepToReviewDays} days</span>
+                Review: <span className="font-semibold">{updatedTimeline.prepToReviewDays} days / {updatedTimeline.prepToReviewBusinessDays} business days</span>
                 <span className="mx-2 text-slate-300">|</span>
-                Submission: <span className="font-semibold">{updatedTimeline.reviewToTpmDays} days</span>
+                Submission: <span className="font-semibold">{updatedTimeline.reviewToTpmDays} days / {updatedTimeline.reviewToTpmBusinessDays} business days</span>
                 {updatedTimeline.outOfOrder ? (
                   <div className="mt-2">One or more due dates are out of order. Review must be on or after preparation, and TPM submission must be on or after review.</div>
                 ) : null}

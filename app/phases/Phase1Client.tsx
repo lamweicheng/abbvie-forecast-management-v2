@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
+import { forecastFolderName, forecastFolderRoute } from "../../lib/forecastFolders";
 import { useSessionCycles } from "../SessionDataProvider";
 import {
   PowerCommandBar,
@@ -95,7 +96,20 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-5">
             <PowerField label="Upload prepared forecast file" hint="Upload the working forecast artifact for approval.">
-              <input type="file" className={powerFileClassName} disabled={preview} />
+              <div className="space-y-3">
+                <input type="file" className={powerFileClassName} disabled={preview} />
+                {cycleId ? (
+                  <div className="text-sm text-slate-600">
+                    Stored in draft folder:{" "}
+                    <a
+                      href={forecastFolderRoute(cycleId, "draft")}
+                      className="font-medium text-slate-900 underline underline-offset-2"
+                    >
+                      {forecastFolderName(cycle, "draft")}
+                    </a>
+                  </div>
+                ) : null}
+              </div>
             </PowerField>
 
             <PowerField label="Upload Reference Files" hint="Optional supporting files for approvers.">

@@ -264,7 +264,7 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                   })()}
                 </td>
                 <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">
-                  {c.forecastPdfHref ? (
+                  {c.closed && c.forecastPdfHref ? (
                     <Link
                       className="font-medium text-slate-900 underline"
                       href={forecastFolderRoute(c.id)}

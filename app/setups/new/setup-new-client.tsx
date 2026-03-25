@@ -125,7 +125,7 @@ export function SetupNewClient() {
   const defaultEnd = "2026-12-31";
 
   const [pillar, setPillar] = useState<SetupRow["pillar"]>(PILLARS[0]);
-  const [tpm, setTpm] = useState<(typeof TPM_OPTIONS)[number]>(TPM_OPTIONS[0]);
+  const [tpm, setTpm] = useState("");
   const [products, setProducts] = useState<string[]>([]);
   const [productDraft, setProductDraft] = useState("");
   const [productCatalog, setProductCatalog] = useState<string[]>([]);
@@ -134,8 +134,8 @@ export function SetupNewClient() {
   const [bindingPeriod, setBindingPeriod] = useState("");
   const [firmPeriodRaw, setFirmPeriodRaw] = useState("");
   const [rollingForecastHorizonRaw, setRollingForecastHorizonRaw] = useState("");
-  const [assigneesRaw, setAssigneesRaw] = useState("GSP Planner A");
-  const [approversRaw, setApproversRaw] = useState("Approver A, Approver B");
+  const [assigneesRaw, setAssigneesRaw] = useState("");
+  const [approversRaw, setApproversRaw] = useState("");
   const [additionalApproversRaw, setAdditionalApproversRaw] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>("Monthly");
   const [startDate, setStartDate] = useState(defaultStart);
@@ -154,6 +154,17 @@ export function SetupNewClient() {
           .flatMap((s) => s.products ?? [])
           .map((p) => p.trim())
           .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [allSetups]);
+
+  const tpmOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        [
+          ...TPM_OPTIONS,
+          ...allSetups.map((setup) => setup.tpm).filter(Boolean)
+        ].map((value) => value.trim()).filter(Boolean)
       )
     ).sort((a, b) => a.localeCompare(b));
   }, [allSetups]);
@@ -292,17 +303,17 @@ export function SetupNewClient() {
             </PowerField>
 
             <PowerField label="TPM name">
-            <select
+            <input
               className={powerInputClassName}
               value={tpm}
-              onChange={(e) => setTpm(e.target.value as (typeof TPM_OPTIONS)[number])}
-            >
-              {TPM_OPTIONS.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
+              onChange={(e) => setTpm(e.target.value)}
+              list="setup-tpm-options"
+            />
+            <datalist id="setup-tpm-options">
+              {tpmOptions.map((name) => (
+                <option key={name} value={name} />
               ))}
-            </select>
+            </datalist>
             </PowerField>
 
             <PowerField label="TPM previous company name">
@@ -318,15 +329,6 @@ export function SetupNewClient() {
               className={powerInputClassName}
               value={tpmLocation}
               onChange={(e) => setTpmLocation(e.target.value)}
-              placeholder="e.g., North America"
-            />
-            </PowerField>
-
-            <PowerField label="Binding period">
-            <input
-              className={powerInputClassName}
-              value={bindingPeriod}
-              onChange={(e) => setBindingPeriod(e.target.value)}
             />
             </PowerField>
 
@@ -386,6 +388,14 @@ export function SetupNewClient() {
                 ))}
               </div>
             ) : null}
+            </PowerField>
+
+            <PowerField label="Binding period">
+            <input
+              className={powerInputClassName}
+              value={bindingPeriod}
+              onChange={(e) => setBindingPeriod(e.target.value)}
+            />
             </PowerField>
 
             <PowerField label="Firm period">
