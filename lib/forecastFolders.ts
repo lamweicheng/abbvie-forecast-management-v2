@@ -36,20 +36,20 @@ function cyclePeriodToken(cycle?: ForecastFolderCycleLike) {
 
 export function forecastArtifactFileName(cycle?: ForecastFolderCycleLike) {
   const tpm = cycle?.tpm?.trim() || "TPM";
-  return `${tpm}_Forecast_${cyclePeriodToken(cycle)}.xlsx`;
+  return `${tpm}_Forecast_${cyclePeriodToken(cycle)}`;
 }
 
 export function forecastConfirmationFileName(cycle?: ForecastFolderCycleLike) {
   const tpm = cycle?.tpm?.trim() || "TPM";
-  return `${tpm}_Email_${cyclePeriodToken(cycle)}.msg`;
+  return `${tpm}_Email_${cyclePeriodToken(cycle)}`;
 }
 
 export function forecastDraftFileName(cycle?: ForecastFolderCycleLike) {
   const tpm = cycle?.tpm?.trim() || "TPM";
-  return `${tpm}_Draft_${cyclePeriodToken(cycle)}.xlsx`;
+  return `${tpm}_Draft_${cyclePeriodToken(cycle)}`;
 }
 
 export function forecastReferenceFileName(cycle?: ForecastFolderCycleLike) {
   const tpm = cycle?.tpm?.trim() || "TPM";
-  return `${tpm}_Reference_${cyclePeriodToken(cycle)}.pdf`;
+  return `${tpm}_Reference_${cyclePeriodToken(cycle)}`;
 }

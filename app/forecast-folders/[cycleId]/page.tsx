@@ -13,6 +13,12 @@ import {
 } from "../../../lib/forecastFolders";
 import { useSessionCycles } from "../../SessionDataProvider";
 
+function mergeById<T extends { id: string }>(base: T[], upsertsById: Record<string, T>) {
+  const merged: T[] = base.map((r) => upsertsById[r.id] ?? r);
+  const extra = Object.values(upsertsById).filter((r) => !base.some((b) => b.id === r.id));
+  return [...merged, ...extra];
+}
+
 export default function ForecastFolderPage({
   params
 }: {
@@ -21,50 +27,50 @@ export default function ForecastFolderPage({
   const { cyclesById } = useSessionCycles();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") === "draft" ? "draft" : "final";
+  const allCycles = useMemo(() => mergeById(BASE_CYCLES, cyclesById), [cyclesById]);
 
   const cycle = useMemo(() => {
-    return cyclesById[params.cycleId] ?? BASE_CYCLES.find((entry) => entry.id === params.cycleId);
-  }, [cyclesById, params.cycleId]);
+    return allCycles.find((entry) => entry.id === params.cycleId);
+  }, [allCycles, params.cycleId]);
 
   const folderName = forecastFolderName(cycle, mode);
-  const artifactName = forecastArtifactFileName(cycle);
   const draftArtifactName = forecastDraftFileName(cycle);
-  const confirmationFileName = forecastConfirmationFileName(cycle);
   const referenceFileName = forecastReferenceFileName(cycle);
   const modifiedDate = cycle?.tpmConfirmedDate ?? cycle?.sentToTpmDate ?? cycle?.approverReviewDue ?? cycle?.tpmSubmissionDue ?? "—";
   const workflowHref = cycle ? `/phases/${cycle.phaseId}?cycle=${encodeURIComponent(cycle.id)}` : "/";
   const isDraftFolder = mode === "draft";
-  const hasFinalArtifacts = Boolean(cycle?.closed);
+  const matchingCycles = useMemo(() => {
+    if (!cycle?.setupId) return [] as typeof allCycles;
+    return allCycles
+      .filter((entry) => entry.setupId === cycle.setupId)
+      .sort((a, b) => a.cycleStart.localeCompare(b.cycleStart));
+  }, [allCycles, cycle?.setupId]);
   const draftRows = [
     {
       name: draftArtifactName,
-      type: "Excel workbook",
-      modified: cycle?.gspForecastDue ?? modifiedDate,
-      modifiedBy: cycle?.assignees?.[0] ?? "GSP Planner"
+      modified: cycle?.gspForecastDue ?? modifiedDate
     },
     {
       name: referenceFileName,
-      type: "Reference file",
-      modified: cycle?.gspForecastDue ?? modifiedDate,
-      modifiedBy: cycle?.assignees?.[0] ?? "GSP Planner"
+      modified: cycle?.gspForecastDue ?? modifiedDate
     }
   ];
-  const finalRows = hasFinalArtifacts
-    ? [
-        {
-          name: artifactName,
-          type: "Excel workbook",
-          modified: modifiedDate,
-          modifiedBy: cycle?.tpm || "EM Manager"
-        },
-        {
-          name: confirmationFileName,
-          type: "Email message",
-          modified: modifiedDate,
-          modifiedBy: cycle?.tpm || "TPM"
-        }
-      ]
-    : [];
+  const finalRows = matchingCycles.flatMap((entry) => {
+    if (!(entry.closed && entry.forecastPdfHref)) return [];
+    const entryModifiedDate =
+      entry.tpmConfirmedDate ?? entry.sentToTpmDate ?? entry.approverReviewDue ?? entry.tpmSubmissionDue ?? "—";
+
+    return [
+      {
+        name: forecastArtifactFileName(entry),
+        modified: entryModifiedDate
+      },
+      {
+        name: forecastConfirmationFileName(entry),
+        modified: entryModifiedDate
+      }
+    ];
+  });
   const rows = isDraftFolder ? draftRows : finalRows;
 
   return (
@@ -145,21 +151,17 @@ export default function ForecastFolderPage({
               </div>
             ) : (
               <div className="mt-4 overflow-hidden border border-slate-200 bg-white">
-                <div className="grid grid-cols-[minmax(0,2fr)_180px_180px_180px] border-b border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600">
+                <div className="grid grid-cols-[minmax(0,2fr)_180px] border-b border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600">
                   <div>Name</div>
                   <div>Modified</div>
-                  <div>Modified By</div>
-                  <div>Type</div>
                 </div>
                 {rows.map((row, index) => (
                   <div
                     key={row.name}
-                    className={`grid grid-cols-[minmax(0,2fr)_180px_180px_180px] px-6 py-4 text-sm text-slate-700 ${index < rows.length - 1 ? "border-b border-slate-200" : ""}`}
+                    className={`grid grid-cols-[minmax(0,2fr)_180px] px-6 py-4 text-sm text-slate-700 ${index < rows.length - 1 ? "border-b border-slate-200" : ""}`}
                   >
                     <div className="font-medium text-slate-900">{row.name}</div>
                     <div>{row.modified}</div>
-                    <div>{row.modifiedBy}</div>
-                    <div>{row.type}</div>
                   </div>
                 ))}
               </div>
