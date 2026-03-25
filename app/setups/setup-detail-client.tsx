@@ -134,6 +134,11 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                   <span className="font-medium">TPM Previous Company Name (if applicable):</span> {setup.tpmPreviousCompanyName}
                 </div>
               ) : null}
+              {setup.bindingPeriod ? (
+                <div>
+                  <span className="font-medium">Binding Period:</span> {setup.bindingPeriod}
+                </div>
+              ) : null}
               {typeof setup.firmPeriod === "number" ? (
                 <div>
                   <span className="font-medium">Firm Period:</span> {setup.firmPeriod}
@@ -148,48 +153,66 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                 <span className="font-medium">Window:</span> {setup.startDate} - {setup.endDate}
               </div>
               <div>
+                <span className="font-medium">End date rule:</span>{" "}
+                {setup.endDateMode === "RelativeOffset" && typeof setup.endDateOffsetValue === "number"
+                  ? `${setup.endDateOffsetValue} ${setup.endDateOffsetUnit ?? "days"} after start date`
+                  : "Exact end date"}
+              </div>
+              <div>
                 <span className="font-medium">TPM submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
               </div>
               <div>
                 <span className="font-medium">Default Period to Prepare, Review and Submit Forecast (Business Days):</span>{" "}
                 {setup.defaultBusinessDays?.preparation ?? DEFAULT_BUSINESS_DAYS.preparation} preparation, {setup.defaultBusinessDays?.review ?? DEFAULT_BUSINESS_DAYS.review} review, {setup.defaultBusinessDays?.submission ?? DEFAULT_BUSINESS_DAYS.submission} submission
               </div>
+              <div>
+                <span className="font-medium">Default initiation reminder:</span>{" "}
+                {typeof setup.initiationReminderDays === "number" ? `${setup.initiationReminderDays} day(s)` : "—"}
+              </div>
+              <div>
+                <span className="font-medium">Automate forecast instance initiation:</span>{" "}
+                {setup.automateInstanceInitiation ? "Yes" : "No"}
+              </div>
             </div>
           </div>
 
           <div className="text-sm text-slate-200">
             <div>
-              <span className="font-medium">Assignee(s):</span> {setup.assignees.join(", ")}
+              <span className="font-medium">GSP Planner(s):</span> {setup.assignees.join(", ")}
             </div>
             <div className="mt-1">
-              <span className="font-medium">Approver(s):</span> {setup.approvers.join(", ")}
+              <span className="font-medium">EM Manager(s):</span> {setup.approvers.join(", ")}
             </div>
-            <div className="mt-3">
-              <button
-                type="button"
-                className="rounded-sm border border-white bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100"
-                onClick={() => router.push(`/setups/new?edit=${encodeURIComponent(setup.id)}`)}
-              >
-                Edit setup
-              </button>
+            <div className="mt-1">
+              <span className="font-medium">Additional Approver(s):</span>{" "}
+              {setup.additionalApprovers.length ? setup.additionalApprovers.join(", ") : "—"}
+            </div>
+            <div className="mt-3 max-w-md rounded-sm border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              If you would like to edit any field in this setup page, please contact BTS for more assistance.
             </div>
           </div>
         </div>
       </div>
 
       <div className="border-b border-slate-300 bg-[#d9d9d9] px-4 py-3">
-        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
           <div className="border border-slate-400 bg-white px-3 py-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Instances</div>
             <div className="mt-1 text-2xl font-semibold text-slate-900">{cycles.length}</div>
           </div>
           <div className="border border-slate-400 bg-white px-3 py-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Assignee(s)</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">GSP Planner(s)</div>
             <div className="mt-1 text-sm font-medium text-slate-900">{setup.assignees.join(", ")}</div>
           </div>
           <div className="border border-slate-400 bg-white px-3 py-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approver(s)</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">EM Manager(s)</div>
             <div className="mt-1 text-sm font-medium text-slate-900">{setup.approvers.join(", ")}</div>
+          </div>
+          <div className="border border-slate-400 bg-white px-3 py-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Additional Approver(s)</div>
+            <div className="mt-1 text-sm font-medium text-slate-900">
+              {setup.additionalApprovers.length ? setup.additionalApprovers.join(", ") : "—"}
+            </div>
           </div>
           <div className="border border-slate-400 bg-white px-3 py-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Default business days</div>

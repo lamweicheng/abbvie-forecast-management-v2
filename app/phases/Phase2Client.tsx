@@ -87,6 +87,19 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
           </div>
         </div>
 
+        <div className="mt-5 border border-slate-300 bg-slate-50 px-4 py-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Alignment with latest S&amp;OP / LRP / Plan Volumes
+          </div>
+          <div className="mt-2 text-sm text-slate-700">
+            {typeof cycle?.alignedToLatestPlanVolumes === "boolean"
+              ? cycle.alignedToLatestPlanVolumes
+                ? "Yes"
+                : "No"
+              : "—"}
+          </div>
+        </div>
+
         <div className="mt-5">
           <PowerField
             label="Comments to assignee(s)"

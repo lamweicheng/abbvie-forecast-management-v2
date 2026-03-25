@@ -287,6 +287,7 @@ function LockedPhasePanel({ currentPhaseId, cycleId }: { currentPhaseId: number;
 
 function CycleInfoCard({ cycle }: { cycle: ForecastCycleRow }) {
   const assigneesText = cycle.assignees?.length ? cycle.assignees.join(", ") : "—";
+  const approversText = cycle.approvers?.length ? cycle.approvers.join(", ") : "—";
   const requestedBy = cycle.requestedBy || "—";
   const requestedDate = cycle.requestedDate || "—";
   const gspForecastDue = cycle.gspForecastDue || "—";
@@ -299,7 +300,10 @@ function CycleInfoCard({ cycle }: { cycle: ForecastCycleRow }) {
       <div className="grid gap-3 md:grid-cols-2 text-base">
         <div className="border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <div>
-            Assignee(s): <span className="font-medium">{assigneesText}</span>
+            GSP Planner(s): <span className="font-medium">{assigneesText}</span>
+          </div>
+          <div>
+            EM Manager(s): <span className="font-medium">{approversText}</span>
           </div>
           <div>
             Requested by: <span className="font-medium">{requestedBy}</span>

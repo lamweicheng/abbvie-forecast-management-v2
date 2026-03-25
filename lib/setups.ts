@@ -2,6 +2,9 @@ import { PILLARS } from "./constants";
 
 export type Recurrence = "Monthly" | "Quarterly" | "Yearly";
 
+export type DurationUnit = "days" | "months";
+export type EndDateMode = "ExactDate" | "RelativeOffset";
+
 export const WEEKDAY_OPTIONS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 export type Weekday = (typeof WEEKDAY_OPTIONS)[number];
 
@@ -65,16 +68,56 @@ export type SetupRow = {
   products: string[];
   tpmLocation?: string;
   tpmPreviousCompanyName?: string;
+  bindingPeriod?: string;
   firmPeriod?: number | null;
   rollingForecastHorizon?: number | null;
   assignees: string[];
   approvers: string[];
+  additionalApprovers: string[];
   recurrence: Recurrence;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  endDateMode?: EndDateMode;
+  endDateOffsetValue?: number | null;
+  endDateOffsetUnit?: DurationUnit;
   tpmSubmissionSchedule: TpmSubmissionScheduleRule;
   defaultBusinessDays: DefaultBusinessDays;
+  initiationReminderDays?: number | null;
+  automateInstanceInitiation?: boolean;
 };
+
+function parseIsoDate(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map((value) => Number(value));
+  return new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+}
+
+function formatIsoDate(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function computeSetupEndDate(
+  startDate: string,
+  endDateMode: EndDateMode,
+  exactEndDate: string,
+  offsetValue?: number | null,
+  offsetUnit?: DurationUnit
+) {
+  if (endDateMode === "ExactDate") return exactEndDate;
+  if (!startDate) return "";
+  if (!offsetValue || offsetValue < 0 || !offsetUnit) return "";
+
+  const date = parseIsoDate(startDate);
+  if (offsetUnit === "days") {
+    date.setUTCDate(date.getUTCDate() + Math.floor(offsetValue));
+  } else {
+    date.setUTCMonth(date.getUTCMonth() + Math.floor(offsetValue));
+  }
+
+  return formatIsoDate(date);
+}
 
 export function formatProductsLabel(products: string[]) {
   return (products ?? []).filter(Boolean).join(", ");
@@ -90,15 +133,22 @@ export const BASE_SETUPS: SetupRow[] = [
     products: ["Product A"],
     tpmLocation: "North America",
     tpmPreviousCompanyName: "Company X",
+    bindingPeriod: "12 months",
     firmPeriod: 3,
     rollingForecastHorizon: 12,
     assignees: ["GSP Planner A"],
     approvers: ["Approver A", "Approver B"],
+    additionalApprovers: [],
     recurrence: "Monthly",
     startDate: "2026-01-01",
     endDate: "2026-12-31",
+    endDateMode: "ExactDate",
+    endDateOffsetValue: null,
+    endDateOffsetUnit: "months",
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    defaultBusinessDays: DEFAULT_BUSINESS_DAYS
+    defaultBusinessDays: DEFAULT_BUSINESS_DAYS,
+    initiationReminderDays: 14,
+    automateInstanceInitiation: false
   },
   {
     id: "FS-002",
@@ -107,15 +157,22 @@ export const BASE_SETUPS: SetupRow[] = [
     products: ["Product B"],
     tpmLocation: "Europe",
     tpmPreviousCompanyName: "Company Y",
+    bindingPeriod: "18 months",
     firmPeriod: 6,
     rollingForecastHorizon: 18,
     assignees: ["EM Manager", "GSP Planner B"],
     approvers: ["Approver B"],
+    additionalApprovers: ["Approver C"],
     recurrence: "Quarterly",
     startDate: "2026-01-01",
     endDate: "2026-12-31",
+    endDateMode: "RelativeOffset",
+    endDateOffsetValue: 12,
+    endDateOffsetUnit: "months",
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    defaultBusinessDays: DEFAULT_BUSINESS_DAYS
+    defaultBusinessDays: DEFAULT_BUSINESS_DAYS,
+    initiationReminderDays: 21,
+    automateInstanceInitiation: true
   }
 ];
 

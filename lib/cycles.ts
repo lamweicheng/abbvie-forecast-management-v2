@@ -19,6 +19,9 @@ export type ForecastCycleRow = {
   products: string[];
   tpmLocation?: string;
   tpmPreviousCompanyName?: string;
+  bindingPeriod?: string;
+  initiationReminderDays?: number | null;
+  automateInstanceInitiation?: boolean;
 
   requestedBy?: string;
   requestedDate?: string; // YYYY-MM-DD
@@ -27,8 +30,10 @@ export type ForecastCycleRow = {
   assignees?: string[];
   assigneeComments?: string;
   approvers?: string[];
+  additionalApprovers?: string[];
 
   approverCommentsToAssignees?: string;
+  alignedToLatestPlanVolumes?: boolean;
 
   gspForecastDue?: string; // YYYY-MM-DD
   approverReviewDue?: string; // YYYY-MM-DD
@@ -97,6 +102,16 @@ function subtractBusinessDays(isoDate: string, businessDays: number) {
     if (isBusinessDayUtc(d)) remaining -= 1;
   }
   return formatIsoDate(d);
+}
+
+function subtractCalendarDays(isoDate: string, days: number) {
+  const date = parseIsoDate(isoDate);
+  date.setUTCDate(date.getUTCDate() - Math.max(0, Math.floor(days)));
+  return formatIsoDate(date);
+}
+
+function todayIsoUtc() {
+  return formatIsoDate(new Date());
 }
 
 function weekdayToJsIndex(weekday: Weekday) {
@@ -242,6 +257,16 @@ export function generateCyclesForSetup(
     const tpmSubmissionDue = computeTpmDueDate(setup.tpmSubmissionSchedule, year, monthIndex0);
 
     const { gspForecastDue, approverReviewDue } = computeDefaultMilestoneDates(setup, tpmSubmissionDue, cycleStartIso);
+    const initiationReminderDays =
+      typeof setup.initiationReminderDays === "number" && Number.isFinite(setup.initiationReminderDays)
+        ? Math.max(0, Math.floor(setup.initiationReminderDays))
+        : null;
+    const automateInstanceInitiation = Boolean(setup.automateInstanceInitiation);
+    const automatedRequestedDate =
+      automateInstanceInitiation && initiationReminderDays !== null
+        ? subtractCalendarDays(cycleStartIso, initiationReminderDays)
+        : undefined;
+    const autoInitiated = Boolean(automatedRequestedDate && automatedRequestedDate <= todayIsoUtc());
 
     cycles.push({
       id,
@@ -254,12 +279,21 @@ export function generateCyclesForSetup(
       products: setup.products,
       tpmLocation: setup.tpmLocation,
       tpmPreviousCompanyName: setup.tpmPreviousCompanyName,
+      bindingPeriod: setup.bindingPeriod,
+      initiationReminderDays,
+      automateInstanceInitiation,
+      requestedBy: autoInitiated ? "Automated schedule" : undefined,
+      requestedDate: autoInitiated ? automatedRequestedDate : undefined,
+      emManagerComments: autoInitiated
+        ? `This instance was auto-initiated ${initiationReminderDays} day(s) before the cycle start based on setup defaults.`
+        : undefined,
       assignees: setup.assignees,
       approvers: setup.approvers,
+      additionalApprovers: setup.additionalApprovers,
       gspForecastDue,
       approverReviewDue,
       tpmSubmissionDue,
-      phaseId: 0,
+      phaseId: autoInitiated ? 1 : 0,
       closed: false
     });
 

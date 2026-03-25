@@ -107,14 +107,6 @@ export function SetupsTableClient() {
 
           <button
             type="button"
-            className="rounded-sm border border-slate-200 bg-transparent px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
-            onClick={() => router.push(`/analytics`)}
-          >
-            Analytics &amp; Reporting
-          </button>
-
-          <button
-            type="button"
             className="rounded-sm border border-white bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
             onClick={() => router.push(`/setups/new`)}
           >

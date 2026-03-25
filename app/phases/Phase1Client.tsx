@@ -27,10 +27,16 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
   }, [cycleId, cyclesById]);
 
   const [comments, setComments] = useState<string>("");
+  const [alignedToLatestPlanVolumes, setAlignedToLatestPlanVolumes] = useState<string>("");
 
   useEffect(() => {
     setComments(cycle?.assigneeComments ?? "");
-  }, [cycleId, cycle?.assigneeComments]);
+    if (typeof cycle?.alignedToLatestPlanVolumes === "boolean") {
+      setAlignedToLatestPlanVolumes(cycle.alignedToLatestPlanVolumes ? "Yes" : "No");
+      return;
+    }
+    setAlignedToLatestPlanVolumes("");
+  }, [cycle?.alignedToLatestPlanVolumes, cycleId, cycle?.assigneeComments]);
 
   const saveDraft = () => {
     if (preview) return;
@@ -39,6 +45,10 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
     const next: ForecastCycleRow = {
       ...cycle,
       assigneeComments: comments || undefined,
+      alignedToLatestPlanVolumes:
+        alignedToLatestPlanVolumes === ""
+          ? undefined
+          : alignedToLatestPlanVolumes === "Yes",
       phaseId: 1
     };
     upsertCycle(next);
@@ -83,9 +93,28 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
         ) : null}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-          <PowerField label="Upload prepared forecast file" hint="Upload the working forecast artifact for approval.">
-            <input type="file" className={powerFileClassName} disabled={preview} />
-          </PowerField>
+          <div className="space-y-5">
+            <PowerField label="Upload prepared forecast file" hint="Upload the working forecast artifact for approval.">
+              <input type="file" className={powerFileClassName} disabled={preview} />
+            </PowerField>
+
+            <PowerField label="Upload Reference Files" hint="Optional supporting files for approvers.">
+              <input type="file" className={powerFileClassName} disabled={preview} multiple />
+            </PowerField>
+
+            <PowerField label="Have this forecast draft aligned with the latest S&OP or LRP or Plan Volumes?">
+              <select
+                className={powerTextAreaClassName.replace("min-h-[140px]", "")}
+                value={alignedToLatestPlanVolumes}
+                onChange={(e) => setAlignedToLatestPlanVolumes(e.target.value)}
+                disabled={preview}
+              >
+                <option value="">Select an option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </PowerField>
+          </div>
 
           <PowerField label="Comments" hint="Add context for reviewers before submitting to Phase 3.">
             <textarea
@@ -124,6 +153,10 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
               const next: ForecastCycleRow = {
                 ...cycle,
                 assigneeComments: comments || undefined,
+                alignedToLatestPlanVolumes:
+                  alignedToLatestPlanVolumes === ""
+                    ? undefined
+                    : alignedToLatestPlanVolumes === "Yes",
                 phaseId: 2
               };
 

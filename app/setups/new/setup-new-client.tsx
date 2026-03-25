@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PILLARS, TPM_OPTIONS } from "../../../lib/constants";
 import { loadProductCatalog, upsertProductToCatalog } from "../../../lib/productCatalog";
 import {
   BASE_SETUPS,
+  computeSetupEndDate,
   DEFAULT_BUSINESS_DAYS,
   DEFAULT_TPM_SUBMISSION_SCHEDULE,
+  type DurationUnit,
+  type EndDateMode,
   NTH_WEEKDAY_OPTIONS,
   QUARTER_MONTH_IN_PERIOD_OPTIONS,
   RECURRENCE_OPTIONS,
@@ -113,17 +116,10 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
 
 export function SetupNewClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { setupsById, cyclesById, upsertSetup, upsertCycle } = useSessionData();
 
   const allSetups = useMemo(() => mergeById(BASE_SETUPS, setupsById), [setupsById]);
   const allCycles = useMemo(() => mergeById(BASE_CYCLES, cyclesById), [cyclesById]);
-
-  const editSetupId = searchParams.get("edit");
-  const editingSetup = useMemo(() => {
-    if (!editSetupId) return null;
-    return allSetups.find((s) => s.id === editSetupId) ?? null;
-  }, [allSetups, editSetupId]);
 
   const defaultStart = "2026-01-01";
   const defaultEnd = "2026-12-31";
@@ -135,13 +131,20 @@ export function SetupNewClient() {
   const [productCatalog, setProductCatalog] = useState<string[]>([]);
   const [tpmLocation, setTpmLocation] = useState("");
   const [tpmPreviousCompanyName, setTpmPreviousCompanyName] = useState("");
+  const [bindingPeriod, setBindingPeriod] = useState("");
   const [firmPeriodRaw, setFirmPeriodRaw] = useState("");
   const [rollingForecastHorizonRaw, setRollingForecastHorizonRaw] = useState("");
   const [assigneesRaw, setAssigneesRaw] = useState("GSP Planner A");
   const [approversRaw, setApproversRaw] = useState("Approver A, Approver B");
+  const [additionalApproversRaw, setAdditionalApproversRaw] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>("Monthly");
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
+  const [endDateMode, setEndDateMode] = useState<EndDateMode>("ExactDate");
+  const [endDateOffsetValueRaw, setEndDateOffsetValueRaw] = useState("12");
+  const [endDateOffsetUnit, setEndDateOffsetUnit] = useState<DurationUnit>("months");
+  const [initiationReminderDaysRaw, setInitiationReminderDaysRaw] = useState("14");
+  const [automateInstanceInitiation, setAutomateInstanceInitiation] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const baseProductOptions = useMemo(() => {
@@ -190,51 +193,6 @@ export function SetupNewClient() {
   );
 
   useEffect(() => {
-    if (!editingSetup) return;
-
-    setPillar(editingSetup.pillar);
-    setTpm(editingSetup.tpm as (typeof TPM_OPTIONS)[number]);
-    setProducts(editingSetup.products ?? []);
-    setTpmLocation(editingSetup.tpmLocation ?? "");
-    setTpmPreviousCompanyName(editingSetup.tpmPreviousCompanyName ?? "");
-    setFirmPeriodRaw(
-      typeof editingSetup.firmPeriod === "number" && Number.isFinite(editingSetup.firmPeriod)
-        ? String(editingSetup.firmPeriod)
-        : ""
-    );
-    setRollingForecastHorizonRaw(
-      typeof editingSetup.rollingForecastHorizon === "number" && Number.isFinite(editingSetup.rollingForecastHorizon)
-        ? String(editingSetup.rollingForecastHorizon)
-        : ""
-    );
-    setAssigneesRaw(editingSetup.assignees.join(", "));
-    setApproversRaw(editingSetup.approvers.join(", "));
-    setRecurrence(editingSetup.recurrence);
-    setStartDate(editingSetup.startDate);
-    setEndDate(editingSetup.endDate);
-
-    const rule = editingSetup.tpmSubmissionSchedule;
-    setScheduleType(rule.type);
-    setPeriodMonthInQuarter((rule.periodMonthInQuarter ?? 3) as QuarterMonthInPeriod);
-    setPeriodMonthOfYear((rule.periodMonthOfYear ?? 3) as MonthOfYear);
-    if (rule.type === "FixedCalendarDate") {
-      setFixedDayOfMonth(rule.dayOfMonth);
-    }
-    if (rule.type === "NthWeekdayOfMonth") {
-      setNth(rule.nth);
-      setNthWeekday(rule.weekday);
-    }
-    if (rule.type === "LastWeekdayOfMonth") {
-      setLastWeekday(rule.weekday);
-    }
-
-    const defaults = editingSetup.defaultBusinessDays ?? DEFAULT_BUSINESS_DAYS;
-    setDefaultPreparationBusinessDays(defaults.preparation);
-    setDefaultReviewBusinessDays(defaults.review);
-    setDefaultSubmissionBusinessDays(defaults.submission);
-  }, [editingSetup]);
-
-  useEffect(() => {
     // Load and merge product catalog from localStorage for future selections.
     setProductCatalog(loadProductCatalog(baseProductOptions));
   }, [baseProductOptions]);
@@ -266,8 +224,11 @@ export function SetupNewClient() {
 
   const unitLower = recurrenceNoun(recurrence).toLowerCase();
   const periodHint = recurrence === "Monthly" ? "" : ` (defaults to final month of the ${unitLower})`;
-  const isEditing = Boolean(editingSetup);
-  const headerTitle = isEditing ? "Edit Setup" : "New Setup";
+  const headerTitle = "New Setup";
+  const computedEndDate = useMemo(() => {
+    const parsedOffset = endDateOffsetValueRaw.trim() === "" ? null : Number(endDateOffsetValueRaw);
+    return computeSetupEndDate(startDate, endDateMode, endDate, parsedOffset, endDateOffsetUnit);
+  }, [endDate, endDateMode, endDateOffsetUnit, endDateOffsetValueRaw, startDate]);
 
   return (
     <div className="space-y-4">
@@ -283,7 +244,7 @@ export function SetupNewClient() {
           <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
             <div className="border border-slate-500 bg-[#4a4a4a] px-3 py-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Mode</div>
-              <div className="mt-1 text-sm font-semibold text-white">{isEditing ? "Edit existing setup" : "Create new setup"}</div>
+              <div className="mt-1 text-sm font-semibold text-white">Create new setup</div>
             </div>
             <div className="border border-slate-500 bg-[#4a4a4a] px-3 py-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Cadence</div>
@@ -349,7 +310,6 @@ export function SetupNewClient() {
               className={powerInputClassName}
               value={tpmPreviousCompanyName}
               onChange={(e) => setTpmPreviousCompanyName(e.target.value)}
-              placeholder="e.g., Company X"
             />
             </PowerField>
 
@@ -362,15 +322,19 @@ export function SetupNewClient() {
             />
             </PowerField>
 
-            <PowerField
-              label="Products"
-              hint="Search an existing product or type a new one and press Enter to add it to the setup."
-            >
+            <PowerField label="Binding period">
+            <input
+              className={powerInputClassName}
+              value={bindingPeriod}
+              onChange={(e) => setBindingPeriod(e.target.value)}
+            />
+            </PowerField>
+
+            <PowerField label="Products">
             <input
               className={powerInputClassName}
               value={productDraft}
               onChange={(e) => setProductDraft(e.target.value)}
-              placeholder="Search or type a product and press Enter"
               list="setup-product-options"
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
@@ -456,12 +420,59 @@ export function SetupNewClient() {
             </PowerField>
 
             <PowerField label="End date">
-            <input
-              type="date"
-              className={powerInputClassName}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="radio"
+                  name="setupEndDateMode"
+                  checked={endDateMode === "ExactDate"}
+                  onChange={() => setEndDateMode("ExactDate")}
+                />
+                Use an exact end date
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="radio"
+                  name="setupEndDateMode"
+                  checked={endDateMode === "RelativeOffset"}
+                  onChange={() => setEndDateMode("RelativeOffset")}
+                />
+                Set end date relative to the start date
+              </label>
+
+              {endDateMode === "ExactDate" ? (
+                <input
+                  type="date"
+                  className={powerInputClassName}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      className={`${powerInputClassName} w-32`}
+                      value={endDateOffsetValueRaw}
+                      onChange={(e) => setEndDateOffsetValueRaw(e.target.value)}
+                    />
+                    <select
+                      className={`${powerInputClassName} w-40`}
+                      value={endDateOffsetUnit}
+                      onChange={(e) => setEndDateOffsetUnit(e.target.value as DurationUnit)}
+                    >
+                      <option value="days">Days</option>
+                      <option value="months">Months</option>
+                    </select>
+                    <span className="text-sm text-slate-700">after the start date</span>
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    Calculated end date: <span className="font-semibold text-slate-900">{computedEndDate || "—"}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             </PowerField>
           </div>
         </PowerPanel>
@@ -659,23 +670,63 @@ export function SetupNewClient() {
         </PowerPanel>
 
         <PowerPanel title="Routing and access" tone="slate">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <PowerField label="Assignee(s)" hint="Comma-separated list.">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <PowerField label="GSP Planner(s)" hint="Comma-separated list.">
               <input
                 className={powerInputClassName}
                 value={assigneesRaw}
                 onChange={(e) => setAssigneesRaw(e.target.value)}
-                placeholder="Comma-separated"
               />
             </PowerField>
 
-            <PowerField label="Approver(s)" hint="Comma-separated list.">
+            <PowerField label="EM Manager(s)" hint="Comma-separated list.">
               <input
                 className={powerInputClassName}
                 value={approversRaw}
                 onChange={(e) => setApproversRaw(e.target.value)}
-                placeholder="Comma-separated"
               />
+            </PowerField>
+
+            <PowerField label="Additional Approver(s)" hint="Comma-separated list.">
+              <input
+                className={powerInputClassName}
+                value={additionalApproversRaw}
+                onChange={(e) => setAdditionalApproversRaw(e.target.value)}
+              />
+            </PowerField>
+          </div>
+        </PowerPanel>
+
+        <PowerPanel title="Forecast instance initiation" tone="sky">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <PowerField
+              label="Default reminder to initiate forecast instance"
+              hint="This lead time is stored in days before the cycle start date."
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  className={`${powerInputClassName} w-32`}
+                  value={initiationReminderDaysRaw}
+                  onChange={(e) => setInitiationReminderDaysRaw(e.target.value)}
+                />
+                <span className="text-sm text-slate-700">days</span>
+              </div>
+            </PowerField>
+
+            <PowerField
+              label="Automate forecast instance initiation"
+              hint="If enabled, the system auto-initiates an instance when it reaches the reminder lead time."
+            >
+              <select
+                className={powerInputClassName}
+                value={automateInstanceInitiation ? "yes" : "no"}
+                onChange={(e) => setAutomateInstanceInitiation(e.target.value === "yes")}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
             </PowerField>
           </div>
 
@@ -695,29 +746,51 @@ export function SetupNewClient() {
 
                 const assignees = splitList(assigneesRaw);
                 const approvers = splitList(approversRaw);
+                const additionalApprovers = splitList(additionalApproversRaw);
+                const parsedEndDateOffset = endDateOffsetValueRaw.trim() === "" ? null : Number(endDateOffsetValueRaw);
+                const resolvedEndDate = computeSetupEndDate(
+                  startDate,
+                  endDateMode,
+                  endDate,
+                  parsedEndDateOffset,
+                  endDateOffsetUnit
+                );
+                const parsedInitiationReminderDays =
+                  initiationReminderDaysRaw.trim() === "" ? null : Number(initiationReminderDaysRaw);
 
                 if (!tpm.trim() || products.length === 0) {
                   setError("TPM and at least one Product are required.");
                   return;
                 }
-                if (!startDate || !endDate) {
+                if (!startDate || !resolvedEndDate) {
                   setError("Start date and end date are required.");
                   return;
                 }
-                if (endDate < startDate) {
+                if (resolvedEndDate < startDate) {
                   setError("End date must be on/after the start date.");
                   return;
                 }
+                if (endDateMode === "RelativeOffset" && (parsedEndDateOffset === null || !Number.isFinite(parsedEndDateOffset))) {
+                  setError("Enter a valid end date offset.");
+                  return;
+                }
                 if (assignees.length === 0) {
-                  setError("At least one assignee is required.");
+                  setError("At least one GSP Planner is required.");
                   return;
                 }
                 if (approvers.length === 0) {
-                  setError("At least one approver is required.");
+                  setError("At least one EM Manager is required.");
+                  return;
+                }
+                if (
+                  parsedInitiationReminderDays !== null &&
+                  (!Number.isFinite(parsedInitiationReminderDays) || parsedInitiationReminderDays < 0)
+                ) {
+                  setError("Default initiation reminder must be zero or greater.");
                   return;
                 }
 
-                const id = editingSetup ? editingSetup.id : nextSetupId(allSetups.map((s) => s.id));
+                const id = nextSetupId(allSetups.map((s) => s.id));
                 const firmPeriodParsed = firmPeriodRaw.trim() === "" ? null : Number(firmPeriodRaw);
                 const rollingForecastHorizonParsed = rollingForecastHorizonRaw.trim() === "" ? null : Number(rollingForecastHorizonRaw);
 
@@ -728,6 +801,7 @@ export function SetupNewClient() {
                   products: products.map((p) => p.trim()).filter(Boolean),
                   tpmLocation: tpmLocation.trim() ? tpmLocation.trim() : undefined,
                   tpmPreviousCompanyName: tpmPreviousCompanyName.trim() ? tpmPreviousCompanyName.trim() : undefined,
+                  bindingPeriod: bindingPeriod.trim() ? bindingPeriod.trim() : undefined,
                   firmPeriod:
                     typeof firmPeriodParsed === "number" && Number.isFinite(firmPeriodParsed)
                       ? Math.max(0, Math.floor(firmPeriodParsed))
@@ -738,28 +812,38 @@ export function SetupNewClient() {
                     : null,
                   assignees,
                   approvers,
+                  additionalApprovers,
                   recurrence,
                   startDate,
-                  endDate,
+                  endDate: resolvedEndDate,
+                  endDateMode,
+                  endDateOffsetValue:
+                    endDateMode === "RelativeOffset" && parsedEndDateOffset !== null && Number.isFinite(parsedEndDateOffset)
+                      ? Math.max(0, Math.floor(parsedEndDateOffset))
+                      : null,
+                  endDateOffsetUnit,
                   tpmSubmissionSchedule,
                   defaultBusinessDays: {
                     preparation: Math.max(0, Math.floor(defaultPreparationBusinessDays)),
                     review: Math.max(0, Math.floor(defaultReviewBusinessDays)),
                     submission: Math.max(0, Math.floor(defaultSubmissionBusinessDays))
-                  }
+                  },
+                  initiationReminderDays:
+                    parsedInitiationReminderDays !== null && Number.isFinite(parsedInitiationReminderDays)
+                      ? Math.max(0, Math.floor(parsedInitiationReminderDays))
+                      : null,
+                  automateInstanceInitiation
                 };
 
                 upsertSetup(setup);
 
-                if (!editingSetup) {
-                  const cycles = generateCyclesForSetup(setup, allCycles.map((c) => c.id));
-                  for (const c of cycles) upsertCycle(c);
-                }
+                const cycles = generateCyclesForSetup(setup, allCycles.map((c) => c.id));
+                for (const c of cycles) upsertCycle(c);
 
                 router.push(`/setups/${encodeURIComponent(id)}`);
               }}
             >
-              {editingSetup ? "Save changes" : "Create Setup"}
+              Create Setup
             </button>
           </PowerCommandBar>
         </PowerPanel>
