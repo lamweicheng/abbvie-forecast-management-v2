@@ -328,7 +328,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s1[0]) {
     Object.assign(s1[0], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-01-03",
       emManagerComments: "Please align assumptions with last cycle and highlight key drivers.",
       phaseId: 4,
@@ -339,7 +339,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s1[1]) {
     Object.assign(s1[1], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-02-03",
       emManagerComments: "Focus on supply constraints and risks.",
       assigneeComments: "Uploaded forecast. Please review the updated assumptions.",
@@ -350,7 +350,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s1[2]) {
     Object.assign(s1[2], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-03-03",
       emManagerComments: "March cycle created and queued.",
       phaseId: 0,
@@ -360,7 +360,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s1[3]) {
     Object.assign(s1[3], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-04-03",
       emManagerComments: "April cycle scheduled.",
       phaseId: 0,
@@ -370,7 +370,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s1[4]) {
     Object.assign(s1[4], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-05-03",
       emManagerComments: "May cycle scheduled.",
       phaseId: 0,
@@ -380,7 +380,7 @@ function seededCycles(): ForecastCycleRow[] {
 
   if (s2[0]) {
     Object.assign(s2[0], {
-      requestedBy: "Record Creator",
+      requestedBy: "EM Manager A",
       requestedDate: "2026-01-05",
       emManagerComments: "Q1 kickoff.",
       phaseId: 0,

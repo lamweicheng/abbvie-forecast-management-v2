@@ -81,7 +81,7 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
         </div>
 
         <div className="mt-5 border border-slate-300 bg-slate-50 px-4 py-3">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Assignee comments</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">GSP Planner comments</div>
           <div className="mt-2 text-sm text-slate-700">
             {cycle?.assigneeComments?.trim() ? cycle.assigneeComments : <span className="text-slate-500">—</span>}
           </div>
@@ -102,8 +102,8 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
 
         <div className="mt-5">
           <PowerField
-            label="Comments to assignee(s)"
-            hint="If changes are requested by the approver or TPM, follow-up conversations can happen outside this tool and the summary should be captured here."
+            label="Comments to Forecast Preparers"
+            hint="If changes are requested by EM Manager(s) or TPM, follow-up conversations can happen outside this tool and the summary should be captured here."
           >
             <textarea
               className={powerTextAreaClassName}
@@ -135,7 +135,7 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
             }}
             disabled={preview}
           >
-            Send back to assignee(s)
+            Send back to Forecast Preparers
           </button>
           <button
             className={powerSuccessButtonClassName}

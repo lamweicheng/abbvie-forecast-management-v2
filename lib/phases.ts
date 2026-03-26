@@ -13,8 +13,8 @@ export const PHASES: PhaseDefinition[] = [
       'Confirm and adjust ownership, timelines, and requirements for the specific forecast period prior to execution.',
     steps: [
       'Confirm the specific forecast period and scope for this instance.',
-      'Confirm and adjust ownership: assignee(s) and approver(s).',
-      'Confirm and adjust timelines: forecast preparation, approver review/approval, and submission due dates.',
+      'Confirm and adjust ownership: GSP Planner(s), EM Manager(s), and Additional Approver(s).',
+      'Confirm and adjust timelines: forecast preparation, EM Manager review/approval, and submission due dates.',
       'Confirm and adjust requirements: key notes, assumptions, and any required attachments.',
       'Initiate the forecast instance so Phase 2 execution can begin.'
     ]
@@ -23,26 +23,26 @@ export const PHASES: PhaseDefinition[] = [
     id: 1,
     name: 'Phase 2 – Forecast preparation',
     shortDescription:
-      'Assigned assignee(s) are notified, prepare the forecast file, and submit it for review/approval.',
+      'Assigned GSP Planner(s) are notified, prepare the forecast file, and submit it for review/approval.',
     steps: [
-      'Assignee(s) receive a notification with all information set up in Phase 1.',
-      'Assignee(s) prepare the forecast file and align internally as needed.',
-      'Assignee(s) upload the prepared forecast file into the system.',
-      'Assignee(s) submit the file to the defined reviewers/approvers for Phase 2.',
-      'If changes are requested, assignee(s) update the forecast file and resubmit for Phase 2.'
+      'GSP Planner(s) receive a notification with all information set up in Phase 1.',
+      'GSP Planner(s) prepare the forecast file and align internally as needed.',
+      'GSP Planner(s) upload the prepared forecast file into the system.',
+      'GSP Planner(s) submit the file to the defined EM Manager(s) and Additional Approver(s) for Phase 2.',
+      'If changes are requested, GSP Planner(s) update the forecast file and resubmit for Phase 2.'
     ]
   },
   {
     id: 2,
     name: 'Phase 3 – Forecast review & approval',
     shortDescription:
-      'Approvers review the uploaded forecast, approve it, or send it back to assignee(s) with required changes.',
+      'EM Manager(s) review the uploaded forecast, approve it, or send it back to GSP Planner(s) with required changes.',
     steps: [
-      'Approvers receive notifications that a forecast file is ready for review.',
-      'Approvers open the forecast file and review the content.',
-      'Approvers record comments and either approve or request changes.',
+      'EM Manager(s) receive notifications that a forecast file is ready for review.',
+      'EM Manager(s) open the forecast file and review the content.',
+      'EM Manager(s) record comments and either approve or request changes.',
       'If approved, the forecast is marked as ready for submission to TPM (Phase 3).',
-      'If changes are needed, approvers send it back to Phase 1 with clear required updates for the assignee(s).'
+      'If changes are needed, EM Manager(s) send it back to Phase 1 with clear required updates for the GSP Planner(s).'
     ]
   },
   {

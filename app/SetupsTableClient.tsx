@@ -146,7 +146,7 @@ export function SetupsTableClient() {
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-[#f4f4f4] p-4 overscroll-contain">
               <div className="text-sm text-slate-600 space-y-2">
                 <div>
-                  Setups define a recurring forecast template (Pillar, TPM, Products, default assignee(s)/approver(s), cadence, and TPM submission schedule rule).
+                  Setups define a recurring forecast template (Pillar, TPM, Products, default GSP Planner(s), EM Manager(s), Additional Approver(s), cadence, and TPM submission schedule rule).
                 </div>
                 <div>
                   Each setup generates forecast instances with default due dates automatically populated based on the TPM submission due date anchor.

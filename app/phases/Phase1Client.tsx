@@ -29,6 +29,7 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
 
   const [comments, setComments] = useState<string>("");
   const [alignedToLatestPlanVolumes, setAlignedToLatestPlanVolumes] = useState<string>("");
+  const hasReviewFeedback = Boolean(cycle?.approverCommentsToAssignees?.trim() || cycle?.tpmChangeRequest?.trim());
 
   useEffect(() => {
     setComments(cycle?.assigneeComments ?? "");
@@ -62,7 +63,7 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
         <PowerInfoStrip tone="amber">
           <div className="font-semibold">TPM requested changes</div>
           <p className="mt-1">{cycle.tpmChangeRequest}</p>
-          <p className="mt-1 text-xs">Update the forecast and re-submit to continue through review and approval.</p>
+          <p className="mt-1 text-xs">Update the forecast and re-submit to continue through EM Manager review and approval.</p>
         </PowerInfoStrip>
       ) : null}
 
@@ -71,24 +72,26 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
         tone="sky"
       >
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              if (preview) return;
-              setShowFeedback((prev) => !prev);
-            }}
-            className={powerGhostButtonClassName}
-            disabled={preview}
-          >
-            {showFeedback ? "Hide reviewer feedback" : "Show reviewer feedback"}
-          </button>
+          {hasReviewFeedback ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (preview) return;
+                setShowFeedback((prev) => !prev);
+              }}
+              className={powerGhostButtonClassName}
+              disabled={preview}
+            >
+              {showFeedback ? "Hide Feedback" : "Show Feedback"}
+            </button>
+          ) : null}
         </div>
 
-        {showFeedback ? (
+        {showFeedback && hasReviewFeedback ? (
           <div className="mt-4">
             <PowerInfoStrip tone="amber">
-              <div className="font-semibold">Reviewer feedback</div>
-              <p className="mt-1">Example: Please update assumptions for Q3 and resubmit the forecast.</p>
+              <div className="font-semibold">Feedback</div>
+              <p className="mt-1">{cycle?.approverCommentsToAssignees?.trim() || cycle?.tpmChangeRequest?.trim()}</p>
             </PowerInfoStrip>
           </div>
         ) : null}
@@ -112,7 +115,7 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
               </div>
             </PowerField>
 
-            <PowerField label="Upload Reference Files" hint="Optional supporting files for approvers.">
+            <PowerField label="Upload Reference Files" hint="Optional supporting files for EM Manager(s) and Additional Approver(s).">
               <input type="file" className={powerFileClassName} disabled={preview} multiple />
             </PowerField>
 
@@ -130,11 +133,11 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
             </PowerField>
           </div>
 
-          <PowerField label="Comments" hint="Add context for reviewers before submitting to Phase 3.">
+          <PowerField label="Comments" hint="Add context for EM Manager(s) and Additional Approver(s) before submitting to Phase 3.">
             <textarea
               className={powerTextAreaClassName}
               rows={6}
-              placeholder="Add any notes for approvers to review."
+              placeholder="Add any notes for EM Manager(s) and Additional Approver(s) to review."
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               disabled={preview}

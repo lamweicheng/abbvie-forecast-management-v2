@@ -131,11 +131,24 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
   }, [existing?.setupId, setupsById]);
 
   const suggestedBusinessDays = setup?.defaultBusinessDays ?? DEFAULT_BUSINESS_DAYS;
+  const additionalApproverOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        [
+          ...(setup?.additionalApprovers ?? []),
+          ...BASE_SETUPS.flatMap((entry) => entry.additionalApprovers ?? []),
+          ...Object.values(setupsById).flatMap((entry) => entry.additionalApprovers ?? [])
+        ].filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [setup?.additionalApprovers, setupsById]);
 
   const [assigneeInput, setAssigneeInput] = useState<string>("");
   const [assignees, setAssignees] = useState<string[]>(existing?.assignees ?? []);
   const [approverInput, setApproverInput] = useState<string>("");
   const [approvers, setApprovers] = useState<string[]>(existing?.approvers ?? []);
+  const [additionalApproverInput, setAdditionalApproverInput] = useState<string>("");
+  const [additionalApprovers, setAdditionalApprovers] = useState<string[]>(existing?.additionalApprovers ?? setup?.additionalApprovers ?? []);
   const [emManagerComments, setEmManagerComments] = useState<string>(existing?.emManagerComments ?? "");
   const [gspForecastDue, setGspForecastDue] = useState<string>(existing?.gspForecastDue ?? todayIso());
   const [approverReviewDue, setApproverReviewDue] = useState<string>(existing?.approverReviewDue ?? todayIso());
@@ -145,8 +158,10 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     // When switching between instances, reset local edits.
     setAssigneeInput("");
     setApproverInput("");
+    setAdditionalApproverInput("");
     setAssignees(existing?.assignees ?? []);
     setApprovers(existing?.approvers ?? []);
+    setAdditionalApprovers(existing?.additionalApprovers ?? setup?.additionalApprovers ?? []);
     setEmManagerComments(existing?.emManagerComments ?? "");
     setGspForecastDue(existing?.gspForecastDue ?? todayIso());
     setApproverReviewDue(existing?.approverReviewDue ?? todayIso());
@@ -156,10 +171,12 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     existing?.id,
     existing?.assignees,
     existing?.approvers,
+    existing?.additionalApprovers,
     existing?.emManagerComments,
     existing?.gspForecastDue,
     existing?.approverReviewDue,
-    existing?.tpmSubmissionDue
+    existing?.tpmSubmissionDue,
+    setup?.additionalApprovers
   ]);
 
   const defaultDueDates = useMemo(() => {
@@ -176,7 +193,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
 
     if (defaultDueDates.gspForecastDue && gspForecastDue !== defaultDueDates.gspForecastDue) {
       changes.push({
-        label: "Assignee forecast due",
+        label: "GSP Planner forecast due",
         defaultValue: defaultDueDates.gspForecastDue,
         updatedValue: gspForecastDue
       });
@@ -184,7 +201,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
 
     if (defaultDueDates.approverReviewDue && approverReviewDue !== defaultDueDates.approverReviewDue) {
       changes.push({
-        label: "Approver review due",
+        label: "EM Manager review due",
         defaultValue: defaultDueDates.approverReviewDue,
         updatedValue: approverReviewDue
       });
@@ -229,11 +246,12 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     if (!existing) return;
     upsertCycle({
       ...existing,
-      requestedBy: existing.requestedBy ?? "Record Creator",
+      requestedBy: existing.requestedBy ?? "EM Manager A",
       requestedDate: existing.requestedDate ?? todayIso(),
       emManagerComments: emManagerComments || undefined,
       assignees: assignees.length ? assignees : undefined,
       approvers: approvers.length ? approvers : undefined,
+      additionalApprovers: additionalApprovers.length ? additionalApprovers : undefined,
       gspForecastDue,
       approverReviewDue,
       tpmSubmissionDue,
@@ -255,6 +273,13 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     setApproverInput("");
   };
 
+  const addAdditionalApprover = () => {
+    const next = additionalApproverInput.trim();
+    if (!next) return;
+    setAdditionalApprovers((prev) => (prev.includes(next) ? prev : [...prev, next]));
+    setAdditionalApproverInput("");
+  };
+
   return (
     <section className="space-y-5">
       {!cycleId ? (
@@ -273,8 +298,8 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
         title="Ownership and routing"
         tone="sky"
       >
-        <div className="grid gap-5 md:grid-cols-2">
-          <PowerField label="Assign assignee(s)" hint="Search and add forecast preparers for this instance.">
+        <div className="grid gap-5 md:grid-cols-3">
+          <PowerField label="GSP Planner(s)">
             <div className="flex items-center gap-2">
               <input
                 className={powerInputClassName}
@@ -306,7 +331,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
             </div>
 
             {assignees.length === 0 ? (
-              <p className="text-sm text-slate-500">No assignees selected.</p>
+              <p className="text-sm text-slate-500">No GSP Planner(s) selected.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {assignees.map((name) => (
@@ -327,7 +352,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
             )}
           </PowerField>
 
-          <PowerField label="Approvers" hint="Define who can review and approve the submitted forecast.">
+          <PowerField label="EM Manager(s)">
             <div className="flex items-center gap-2">
               <input
                 className={powerInputClassName}
@@ -359,7 +384,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
             </div>
 
             {approvers.length === 0 ? (
-              <p className="text-sm text-slate-500">No approvers selected.</p>
+              <p className="text-sm text-slate-500">No EM Manager(s) selected.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {approvers.map((name) => (
@@ -379,6 +404,59 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
               </div>
             )}
           </PowerField>
+
+          <PowerField label="Additional Approver(s)">
+            <div className="flex items-center gap-2">
+              <input
+                className={powerInputClassName}
+                placeholder="Type to search and add"
+                value={additionalApproverInput}
+                onChange={(e) => setAdditionalApproverInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addAdditionalApprover();
+                  }
+                }}
+                disabled={!cycleId || preview}
+                list="additional-approver-options"
+              />
+              <button
+                type="button"
+                className={powerGhostButtonClassName}
+                onClick={addAdditionalApprover}
+                disabled={!cycleId || preview}
+              >
+                Add
+              </button>
+              <datalist id="additional-approver-options">
+                {additionalApproverOptions.map((opt) => (
+                  <option key={opt} value={opt} />
+                ))}
+              </datalist>
+            </div>
+
+            {additionalApprovers.length === 0 ? (
+              <p className="text-sm text-slate-500">No Additional Approver(s) selected.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {additionalApprovers.map((name) => (
+                  <PowerPill key={name}>
+                    {name}
+                    <button
+                      type="button"
+                      className="text-slate-500 hover:text-slate-900"
+                      onClick={() => setAdditionalApprovers((prev) => prev.filter((p) => p !== name))}
+                      disabled={!cycleId || preview}
+                      aria-label={`Remove ${name}`}
+                    >
+                      ×
+                    </button>
+                  </PowerPill>
+                ))}
+              </div>
+            )}
+          </PowerField>
         </div>
       </PowerPanel>
 
@@ -387,7 +465,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
         tone="emerald"
       >
         <div className="grid gap-4 md:grid-cols-3">
-          <PowerField label="Preparation due" hint="Assignee forecast due date.">
+          <PowerField label="Preparation due">
             <input
               type="date"
               className={powerInputClassName}
@@ -396,7 +474,7 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
               disabled={!cycleId || preview}
             />
           </PowerField>
-          <PowerField label="Review due" hint="Approver review due date.">
+          <PowerField label="Review due">
             <input
               type="date"
               className={powerInputClassName}
@@ -495,20 +573,20 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
           </div>
         ) : null}
 
-        <div className="mt-5 text-xs leading-6 text-slate-500">
+          <div className="mt-5 text-xs leading-6 text-slate-500">
           Default milestone dates are auto-populated from the setup template: Preparation = {suggestedBusinessDays.preparation} business days, Review = {suggestedBusinessDays.review} business days, Submission = {suggestedBusinessDays.submission} business days. You can override these dates for this instance without changing the setup template.
         </div>
       </PowerPanel>
 
       <PowerPanel
-        title="Manager notes"
+        title="Notes"
         tone="slate"
       >
-        <PowerField label="Comments" hint="These notes will guide the assignee(s) when the instance is initiated.">
+        <PowerField label="Comments" hint="These notes will guide the Forecast Preparer when the instance is initiated.">
           <textarea
             className={powerTextAreaClassName}
             rows={4}
-            placeholder="Add any notes for the assignee(s)."
+            placeholder="Add any notes for the GSP Planner(s)."
             value={emManagerComments}
             onChange={(e) => setEmManagerComments(e.target.value)}
             disabled={!cycleId || preview}
