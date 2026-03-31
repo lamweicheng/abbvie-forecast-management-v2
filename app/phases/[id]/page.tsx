@@ -39,7 +39,7 @@ export default function PhasePage({
           </div>
         </header>
 
-        <PhaseScreen phaseId={phase.id} cycleId={cycleId} phaseName={phase.name} instruction={phase.shortDescription} />
+        <PhaseScreen phaseId={phase.id} cycleId={cycleId} phaseName={phase.name} />
 
       </div>
     </main>

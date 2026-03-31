@@ -36,13 +36,11 @@ export function PhaseScreen({
   phaseId,
   cycleId,
   phaseName,
-  instruction,
   preview = false
 }: {
   phaseId: number;
   cycleId?: string;
   phaseName?: string;
-  instruction?: string;
   preview?: boolean;
 }) {
   const { cyclesById } = useSessionCycles();
@@ -51,7 +49,6 @@ export function PhaseScreen({
     : undefined;
   const lastPhaseId = PHASES.length - 1;
   const resolvedPhaseName = phaseName ?? PHASES.find((p) => p.id === phaseId)?.name;
-  const resolvedInstruction = instruction ?? PHASES.find((p) => p.id === phaseId)?.shortDescription;
 
   const recordBanner = cycleId ? (
     <div className="border border-slate-400 bg-white px-4 py-3 text-base text-slate-700">
@@ -166,7 +163,6 @@ export function PhaseScreen({
                       {status}
                     </span>
                   </span>
-                  <span className="mt-1 block text-xs leading-5 text-slate-600">{phase.shortDescription}</span>
                 </span>
               </>
             );
@@ -197,7 +193,6 @@ export function PhaseScreen({
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-700">Phase workspace</div>
                 <h1 className="mt-2 text-2xl font-semibold text-slate-950">{resolvedPhaseName}</h1>
-                {resolvedInstruction ? <p className="mt-2 max-w-3xl text-sm leading-5 text-slate-700">{resolvedInstruction}</p> : null}
               </div>
               <div className={["border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em]", shellTone].join(" ")}>
                 {isFuturePhase ? "Locked" : effectivePreview ? "View only" : "Editable"}
@@ -216,11 +211,6 @@ export function PhaseScreen({
               <LockedPhasePanel currentPhaseId={actualCurrentPhaseId} cycleId={cycleId} />
             ) : (
               <div className="space-y-4">
-                {isHistoricalPhase ? (
-                  <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    View only
-                  </div>
-                ) : null}
                 {cycle && cycleId && phaseId !== 0 ? <CycleInfoCard cycle={cycle} /> : null}
                 {content}
               </div>

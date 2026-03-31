@@ -1,5 +1,5 @@
 import type { SetupRow, Recurrence, TpmSubmissionScheduleRule, Weekday } from "./setups";
-import { DEFAULT_BUSINESS_DAYS } from "./setups";
+import { DEFAULT_PREPARATION_DUE_SCHEDULE, DEFAULT_REVIEW_DUE_SCHEDULE } from "./setups";
 import { BASE_SETUPS } from "./setups";
 import { formatProductsLabel } from "./setups";
 import { PILLARS } from "./constants";
@@ -89,21 +89,6 @@ function formatIsoDate(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-function isBusinessDayUtc(date: Date) {
-  const day = date.getUTCDay();
-  return day !== 0 && day !== 6;
-}
-
-function subtractBusinessDays(isoDate: string, businessDays: number) {
-  let remaining = Math.max(0, Math.floor(businessDays));
-  const d = parseIsoDate(isoDate);
-  while (remaining > 0) {
-    d.setUTCDate(d.getUTCDate() - 1);
-    if (isBusinessDayUtc(d)) remaining -= 1;
-  }
-  return formatIsoDate(d);
-}
-
 function subtractCalendarDays(isoDate: string, days: number) {
   const date = parseIsoDate(isoDate);
   date.setUTCDate(date.getUTCDate() - Math.max(0, Math.floor(days)));
@@ -152,23 +137,24 @@ function computeTpmDueDate(rule: TpmSubmissionScheduleRule, year: number, monthI
 }
 
 function monthAnchorForRecurrence(
-  setup: Pick<SetupRow, "recurrence" | "tpmSubmissionSchedule">,
+  recurrence: Recurrence,
+  rule: TpmSubmissionScheduleRule,
   periodStart: Date,
   periodEnd: Date
 ) {
-  if (setup.recurrence === "Monthly") {
+  if (recurrence === "Monthly") {
     return { year: periodEnd.getFullYear(), monthIndex0: periodEnd.getMonth() };
   }
 
-  if (setup.recurrence === "Quarterly") {
-    const inQuarter = setup.tpmSubmissionSchedule.periodMonthInQuarter ?? 3;
+  if (recurrence === "Quarterly") {
+    const inQuarter = rule.periodMonthInQuarter ?? 3;
     const offset = Math.max(1, Math.min(3, inQuarter)) - 1;
     const anchor = new Date(periodStart.getFullYear(), periodStart.getMonth() + offset, 1);
     return { year: anchor.getFullYear(), monthIndex0: anchor.getMonth() };
   }
 
   // Yearly
-  const monthOfYear = setup.tpmSubmissionSchedule.periodMonthOfYear ?? 3;
+  const monthOfYear = rule.periodMonthOfYear ?? 3;
   const desiredMonthIndex0 = Math.max(1, Math.min(12, monthOfYear)) - 1;
   let year = periodStart.getFullYear();
 
@@ -178,20 +164,14 @@ function monthAnchorForRecurrence(
   return { year, monthIndex0: desiredMonthIndex0 };
 }
 
-function computeDefaultMilestoneDates(setup: Pick<SetupRow, "defaultBusinessDays">, tpmSubmissionDue: string, cycleStart: string) {
-  const defaults = setup.defaultBusinessDays ?? DEFAULT_BUSINESS_DAYS;
-
-  // Defaults are expressed as business-day windows between milestones.
-  // - Submission window: review due -> TPM submission due
-  // - Review window: preparation due -> review due
-  let approverReviewDue = subtractBusinessDays(tpmSubmissionDue, defaults.submission);
-  let gspForecastDue = subtractBusinessDays(approverReviewDue, defaults.review);
-
-  // Clamp to cycle window start to avoid generating dates outside the instance period.
-  if (gspForecastDue < cycleStart) gspForecastDue = cycleStart;
-  if (approverReviewDue < cycleStart) approverReviewDue = cycleStart;
-
-  return { gspForecastDue, approverReviewDue };
+function computeScheduledDueDate(
+  recurrence: Recurrence,
+  rule: TpmSubmissionScheduleRule,
+  periodStart: Date,
+  periodEnd: Date
+) {
+  const { year, monthIndex0 } = monthAnchorForRecurrence(recurrence, rule, periodStart, periodEnd);
+  return computeTpmDueDate(rule, year, monthIndex0);
 }
 
 function monthLabel(date: Date) {
@@ -253,10 +233,21 @@ export function generateCyclesForSetup(
     const cycleStartIso = iso(periodStart.getFullYear(), periodStart.getMonth() + 1, 1);
     const cycleEndIso = iso(periodEnd.getFullYear(), periodEnd.getMonth() + 1, periodEnd.getDate());
 
-    const { year, monthIndex0 } = monthAnchorForRecurrence(setup, periodStart, periodEnd);
-    const tpmSubmissionDue = computeTpmDueDate(setup.tpmSubmissionSchedule, year, monthIndex0);
-
-    const { gspForecastDue, approverReviewDue } = computeDefaultMilestoneDates(setup, tpmSubmissionDue, cycleStartIso);
+    const tpmSubmissionDue = computeScheduledDueDate(setup.recurrence, setup.tpmSubmissionSchedule, periodStart, periodEnd);
+    const gspForecastDue = computeScheduledDueDate(
+      setup.recurrence,
+      setup.preparationDueSchedule ?? DEFAULT_PREPARATION_DUE_SCHEDULE,
+      periodStart,
+      periodEnd
+    );
+    const approverReviewDue = setup.reviewDueSameAsPreparation
+      ? gspForecastDue
+      : computeScheduledDueDate(
+          setup.recurrence,
+          setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE,
+          periodStart,
+          periodEnd
+        );
     const initiationReminderDays =
       typeof setup.initiationReminderDays === "number" && Number.isFinite(setup.initiationReminderDays)
         ? Math.max(0, Math.floor(setup.initiationReminderDays))

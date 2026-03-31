@@ -46,19 +46,20 @@ export const DEFAULT_TPM_SUBMISSION_SCHEDULE: TpmSubmissionScheduleRule = {
   periodMonthOfYear: 3
 };
 
-export type DefaultBusinessDays = {
-  // Suggested minimum business days assignees have from the start of the instance period until Preparation due.
-  preparation: number;
-  // Business days between Preparation due and Review due.
-  review: number;
-  // Business days between Review due and TPM Submission due.
-  submission: number;
+export const DEFAULT_PREPARATION_DUE_SCHEDULE: TpmSubmissionScheduleRule = {
+  type: "NthWeekdayOfMonth",
+  nth: 3,
+  weekday: "Friday",
+  periodMonthInQuarter: 3,
+  periodMonthOfYear: 3
 };
 
-export const DEFAULT_BUSINESS_DAYS: DefaultBusinessDays = {
-  preparation: 10,
-  review: 3,
-  submission: 3
+export const DEFAULT_REVIEW_DUE_SCHEDULE: TpmSubmissionScheduleRule = {
+  type: "NthWeekdayOfMonth",
+  nth: 3,
+  weekday: "Friday",
+  periodMonthInQuarter: 3,
+  periodMonthOfYear: 3
 };
 
 export type SetupRow = {
@@ -80,8 +81,10 @@ export type SetupRow = {
   endDateMode?: EndDateMode;
   endDateOffsetValue?: number | null;
   endDateOffsetUnit?: DurationUnit;
+  preparationDueSchedule: TpmSubmissionScheduleRule;
+  reviewDueSameAsPreparation?: boolean;
+  reviewDueSchedule: TpmSubmissionScheduleRule;
   tpmSubmissionSchedule: TpmSubmissionScheduleRule;
-  defaultBusinessDays: DefaultBusinessDays;
   initiationReminderDays?: number | null;
   automateInstanceInitiation?: boolean;
 };
@@ -145,8 +148,10 @@ export const BASE_SETUPS: SetupRow[] = [
     endDateMode: "ExactDate",
     endDateOffsetValue: null,
     endDateOffsetUnit: "months",
+    preparationDueSchedule: DEFAULT_PREPARATION_DUE_SCHEDULE,
+    reviewDueSameAsPreparation: true,
+    reviewDueSchedule: DEFAULT_REVIEW_DUE_SCHEDULE,
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    defaultBusinessDays: DEFAULT_BUSINESS_DAYS,
     initiationReminderDays: 14,
     automateInstanceInitiation: false
   },
@@ -169,8 +174,22 @@ export const BASE_SETUPS: SetupRow[] = [
     endDateMode: "RelativeOffset",
     endDateOffsetValue: 12,
     endDateOffsetUnit: "months",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Thursday",
+      periodMonthInQuarter: 3,
+      periodMonthOfYear: 3
+    },
+    reviewDueSameAsPreparation: false,
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 3,
+      weekday: "Thursday",
+      periodMonthInQuarter: 3,
+      periodMonthOfYear: 3
+    },
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    defaultBusinessDays: DEFAULT_BUSINESS_DAYS,
     initiationReminderDays: 21,
     automateInstanceInitiation: true
   }

@@ -6,7 +6,15 @@ import { APPROVER_OPTIONS, ASSIGNEE_OPTIONS } from "../../lib/constants";
 import type { ForecastCycleRow } from "../../lib/cycles";
 import { BASE_CYCLES } from "../../lib/cycles";
 import { useSessionCycles, useSessionData } from "../SessionDataProvider";
-import { BASE_SETUPS, DEFAULT_BUSINESS_DAYS, type Recurrence, type SetupRow, type TpmSubmissionScheduleRule } from "../../lib/setups";
+import {
+  BASE_SETUPS,
+  DEFAULT_PREPARATION_DUE_SCHEDULE,
+  DEFAULT_REVIEW_DUE_SCHEDULE,
+  DEFAULT_TPM_SUBMISSION_SCHEDULE,
+  type Recurrence,
+  type SetupRow,
+  type TpmSubmissionScheduleRule
+} from "../../lib/setups";
 import {
   PowerCommandBar,
   PowerField,
@@ -87,31 +95,6 @@ function diffDays(startIso: string, endIso: string) {
   return Math.round((end - start) / (24 * 60 * 60 * 1000));
 }
 
-function isBusinessDayUtc(date: Date) {
-  const day = date.getUTCDay();
-  return day !== 0 && day !== 6;
-}
-
-function diffBusinessDays(startIso: string, endIso: string) {
-  if (startIso === endIso) return 0;
-  const forward = endIso > startIso;
-  const from = forward ? startIso : endIso;
-  const to = forward ? endIso : startIso;
-
-  const d = parseIsoUtc(from);
-  const end = parseIsoUtc(to);
-  let count = 0;
-
-  // Count business days in (from, to] to align with diffDays behavior.
-  while (d.getTime() < end.getTime()) {
-    d.setUTCDate(d.getUTCDate() + 1);
-    if (d.getTime() > end.getTime()) break;
-    if (isBusinessDayUtc(d)) count += 1;
-  }
-
-  return forward ? count : -count;
-}
-
 export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; preview?: boolean }) {
   const router = useRouter();
   const { cyclesById, upsertCycle } = useSessionCycles();
@@ -130,7 +113,12 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     return setupsById[setupId] ?? BASE_SETUPS.find((s) => s.id === setupId);
   }, [existing?.setupId, setupsById]);
 
-  const suggestedBusinessDays = setup?.defaultBusinessDays ?? DEFAULT_BUSINESS_DAYS;
+  const defaultPreparationRule = setup?.preparationDueSchedule ?? DEFAULT_PREPARATION_DUE_SCHEDULE;
+  const defaultReviewRule = setup?.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE;
+  const defaultSubmissionRule = setup?.tpmSubmissionSchedule ?? DEFAULT_TPM_SUBMISSION_SCHEDULE;
+  const reviewDueRuleLabel = setup?.reviewDueSameAsPreparation
+    ? "Same as preparation due"
+    : describeRule(defaultReviewRule, setup?.recurrence ?? "Monthly");
   const additionalApproverOptions = useMemo(() => {
     return Array.from(
       new Set(
@@ -178,67 +166,6 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     existing?.tpmSubmissionDue,
     setup?.additionalApprovers
   ]);
-
-  const defaultDueDates = useMemo(() => {
-    return {
-      gspForecastDue: existing?.gspForecastDue ?? "",
-      approverReviewDue: existing?.approverReviewDue ?? "",
-      tpmSubmissionDue: existing?.tpmSubmissionDue ?? ""
-    };
-  }, [existing?.gspForecastDue, existing?.approverReviewDue, existing?.tpmSubmissionDue]);
-
-  const dueDateChanges = useMemo(() => {
-    const changes: Array<{ label: string; defaultValue: string; updatedValue: string }> = [];
-    if (!cycleId || !existing) return changes;
-
-    if (defaultDueDates.gspForecastDue && gspForecastDue !== defaultDueDates.gspForecastDue) {
-      changes.push({
-        label: "GSP Planner forecast due",
-        defaultValue: defaultDueDates.gspForecastDue,
-        updatedValue: gspForecastDue
-      });
-    }
-
-    if (defaultDueDates.approverReviewDue && approverReviewDue !== defaultDueDates.approverReviewDue) {
-      changes.push({
-        label: "EM Manager review due",
-        defaultValue: defaultDueDates.approverReviewDue,
-        updatedValue: approverReviewDue
-      });
-    }
-
-    if (defaultDueDates.tpmSubmissionDue && tpmSubmissionDue !== defaultDueDates.tpmSubmissionDue) {
-      changes.push({
-        label: "TPM submission due",
-        defaultValue: defaultDueDates.tpmSubmissionDue,
-        updatedValue: tpmSubmissionDue
-      });
-    }
-
-    return changes;
-  }, [cycleId, existing, defaultDueDates, gspForecastDue, approverReviewDue, tpmSubmissionDue]);
-
-  const updatedTimeline = useMemo(() => {
-    if (!gspForecastDue || !approverReviewDue || !tpmSubmissionDue) return null;
-    const prepToReviewDays = diffDays(gspForecastDue, approverReviewDue);
-    const reviewToTpmDays = diffDays(approverReviewDue, tpmSubmissionDue);
-    const todayToPrepDays = diffDays(today, gspForecastDue);
-    const todayToPrepBusinessDays = diffBusinessDays(today, gspForecastDue);
-    const prepToReviewBusinessDays = diffBusinessDays(gspForecastDue, approverReviewDue);
-    const reviewToTpmBusinessDays = diffBusinessDays(approverReviewDue, tpmSubmissionDue);
-
-    const outOfOrder = prepToReviewDays < 0 || reviewToTpmDays < 0;
-
-    return {
-      prepToReviewDays,
-      prepToReviewBusinessDays,
-      reviewToTpmDays,
-      reviewToTpmBusinessDays,
-      todayToPrepDays,
-      todayToPrepBusinessDays,
-      outOfOrder
-    };
-  }, [gspForecastDue, approverReviewDue, tpmSubmissionDue, today]);
 
   const persist = (nextPhaseId: ForecastCycleRow["phaseId"]) => {
     if (preview) return;
@@ -494,88 +421,6 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
           </PowerField>
         </div>
 
-        {cycleId ? (
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <PowerMetric
-              label="Time to prepare"
-              value={updatedTimeline ? (
-                updatedTimeline.todayToPrepDays > 0 ? `${updatedTimeline.todayToPrepBusinessDays} business days` : updatedTimeline.todayToPrepDays === 0 ? "Due today" : `${Math.abs(updatedTimeline.todayToPrepBusinessDays)} overdue`
-              ) : "—"}
-              tone="sky"
-            />
-            <PowerMetric
-              label="Time to review"
-              value={updatedTimeline ? `${updatedTimeline.prepToReviewBusinessDays} business days` : "—"}
-              tone="slate"
-            />
-            <PowerMetric
-              label="Time to submit"
-              value={updatedTimeline ? `${updatedTimeline.reviewToTpmBusinessDays} business days` : "—"}
-              tone="emerald"
-            />
-          </div>
-        ) : null}
-
-        {cycleId ? (
-          <div className="mt-5">
-            <PowerInfoStrip tone="slate">
-              <span className="font-semibold text-slate-900">Preparation time given:</span>{" "}
-              {updatedTimeline ? (
-                updatedTimeline.todayToPrepDays > 0 ? (
-                  <>
-                    {updatedTimeline.todayToPrepDays} days / {updatedTimeline.todayToPrepBusinessDays} business days from today to preparation due.
-                  </>
-                ) : updatedTimeline.todayToPrepDays === 0 ? (
-                  <>0 days / 0 business days. Preparation due is today.</>
-                ) : (
-                  <>
-                    Overdue by {Math.abs(updatedTimeline.todayToPrepDays)} days / {Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days.
-                  </>
-                )
-              ) : (
-                <>—</>
-              )}
-            </PowerInfoStrip>
-          </div>
-        ) : null}
-
-        {dueDateChanges.length ? (
-          <div className="mt-5 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Updated due dates</div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {dueDateChanges.map((c) => (
-                <div key={c.label} className="border border-slate-300 bg-slate-50 px-4 py-3">
-                  <div className="text-sm font-semibold text-slate-900">{c.label}</div>
-                  <div className="mt-2 text-xs text-slate-600">Default</div>
-                  <div className="text-sm font-medium text-slate-900">{c.defaultValue}</div>
-                  <div className="mt-2 text-xs text-slate-600">Updated</div>
-                  <div className="text-sm font-medium text-slate-900">{c.updatedValue}</div>
-                </div>
-              ))}
-            </div>
-
-            {updatedTimeline ? (
-              <PowerInfoStrip tone={updatedTimeline.outOfOrder ? "amber" : "emerald"}>
-                Preparation: <span className="font-semibold">{updatedTimeline.todayToPrepDays > 0
-                  ? `${updatedTimeline.todayToPrepDays} days / ${updatedTimeline.todayToPrepBusinessDays} business days`
-                  : updatedTimeline.todayToPrepDays === 0
-                    ? "0 days / 0 business days"
-                    : `overdue by ${Math.abs(updatedTimeline.todayToPrepDays)} days / ${Math.abs(updatedTimeline.todayToPrepBusinessDays)} business days`}</span>
-                <span className="mx-2 text-slate-300">|</span>
-                Review: <span className="font-semibold">{updatedTimeline.prepToReviewDays} days / {updatedTimeline.prepToReviewBusinessDays} business days</span>
-                <span className="mx-2 text-slate-300">|</span>
-                Submission: <span className="font-semibold">{updatedTimeline.reviewToTpmDays} days / {updatedTimeline.reviewToTpmBusinessDays} business days</span>
-                {updatedTimeline.outOfOrder ? (
-                  <div className="mt-2">One or more due dates are out of order. Review must be on or after preparation, and TPM submission must be on or after review.</div>
-                ) : null}
-              </PowerInfoStrip>
-            ) : null}
-          </div>
-        ) : null}
-
-          <div className="mt-5 text-xs leading-6 text-slate-500">
-          Default milestone dates are auto-populated from the setup template: Preparation = {suggestedBusinessDays.preparation} business days, Review = {suggestedBusinessDays.review} business days, Submission = {suggestedBusinessDays.submission} business days. You can override these dates for this instance without changing the setup template.
-        </div>
       </PowerPanel>
 
       <PowerPanel

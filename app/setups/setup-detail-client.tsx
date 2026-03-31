@@ -7,7 +7,8 @@ import { PHASES } from "../../lib/phases";
 import { forecastFolderRoute } from "../../lib/forecastFolders";
 import {
   BASE_SETUPS,
-  DEFAULT_BUSINESS_DAYS,
+  DEFAULT_PREPARATION_DUE_SCHEDULE,
+  DEFAULT_REVIEW_DUE_SCHEDULE,
   formatProductsLabel,
   type Recurrence,
   type TpmSubmissionScheduleRule
@@ -159,11 +160,17 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                   : "Exact end date"}
               </div>
               <div>
-                <span className="font-medium">TPM submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
+                <span className="font-medium">Preparation due rule:</span>{" "}
+                {describeTpmSchedule(setup.preparationDueSchedule ?? DEFAULT_PREPARATION_DUE_SCHEDULE, setup.recurrence)}
               </div>
               <div>
-                <span className="font-medium">Default Period to Prepare, Review and Submit Forecast (Business Days):</span>{" "}
-                {setup.defaultBusinessDays?.preparation ?? DEFAULT_BUSINESS_DAYS.preparation} preparation, {setup.defaultBusinessDays?.review ?? DEFAULT_BUSINESS_DAYS.review} review, {setup.defaultBusinessDays?.submission ?? DEFAULT_BUSINESS_DAYS.submission} submission
+                <span className="font-medium">Review due rule:</span>{" "}
+                {setup.reviewDueSameAsPreparation
+                  ? "Same as preparation due"
+                  : describeTpmSchedule(setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE, setup.recurrence)}
+              </div>
+              <div>
+                <span className="font-medium">TPM submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
               </div>
               <div>
                 <span className="font-medium">Default initiation reminder:</span>{" "}
@@ -195,7 +202,7 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
       </div>
 
       <div className="border-b border-slate-300 bg-[#d9d9d9] px-4 py-3">
-        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
           <div className="border border-slate-400 bg-white px-3 py-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Instances</div>
             <div className="mt-1 text-2xl font-semibold text-slate-900">{cycles.length}</div>
@@ -212,12 +219,6 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Additional Approver(s)</div>
             <div className="mt-1 text-sm font-medium text-slate-900">
               {setup.additionalApprovers.length ? setup.additionalApprovers.join(", ") : "—"}
-            </div>
-          </div>
-          <div className="border border-slate-400 bg-white px-3 py-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Default business days</div>
-            <div className="mt-1 text-sm font-medium text-slate-900">
-              {setup.defaultBusinessDays?.preparation ?? DEFAULT_BUSINESS_DAYS.preparation} / {setup.defaultBusinessDays?.review ?? DEFAULT_BUSINESS_DAYS.review} / {setup.defaultBusinessDays?.submission ?? DEFAULT_BUSINESS_DAYS.submission}
             </div>
           </div>
         </div>
