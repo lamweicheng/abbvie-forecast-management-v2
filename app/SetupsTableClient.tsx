@@ -178,7 +178,6 @@ export function SetupsTableClient() {
                     <PhaseScreen
                       phaseId={screenExamplePhaseId}
                       phaseName={PHASES.find((p) => p.id === screenExamplePhaseId)?.name}
-                      instruction={PHASES.find((p) => p.id === screenExamplePhaseId)?.shortDescription}
                       cycleId={previewCycleIdForPhase(screenExamplePhaseId)}
                       preview
                     />

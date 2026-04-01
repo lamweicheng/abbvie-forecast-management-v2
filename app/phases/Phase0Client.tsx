@@ -8,9 +8,6 @@ import { BASE_CYCLES } from "../../lib/cycles";
 import { useSessionCycles, useSessionData } from "../SessionDataProvider";
 import {
   BASE_SETUPS,
-  DEFAULT_PREPARATION_DUE_SCHEDULE,
-  DEFAULT_REVIEW_DUE_SCHEDULE,
-  DEFAULT_TPM_SUBMISSION_SCHEDULE,
   type Recurrence,
   type SetupRow,
   type TpmSubmissionScheduleRule
@@ -19,7 +16,6 @@ import {
   PowerCommandBar,
   PowerField,
   PowerInfoStrip,
-  PowerMetric,
   PowerPanel,
   PowerPill,
   powerGhostButtonClassName,
@@ -83,24 +79,10 @@ function describeRule(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
   return `Last ${rule.weekday} of ${monthName} each year`;
 }
 
-function parseIsoUtc(isoDate: string) {
-  // ISO date in UI is YYYY-MM-DD. Parse as UTC midnight to avoid TZ drift.
-  const [y, m, d] = isoDate.split("-").map((v) => Number(v));
-  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1));
-}
-
-function diffDays(startIso: string, endIso: string) {
-  const start = parseIsoUtc(startIso).getTime();
-  const end = parseIsoUtc(endIso).getTime();
-  return Math.round((end - start) / (24 * 60 * 60 * 1000));
-}
-
 export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; preview?: boolean }) {
   const router = useRouter();
   const { cyclesById, upsertCycle } = useSessionCycles();
   const { setupsById } = useSessionData();
-
-  const today = todayIso();
 
   const existing = useMemo<ForecastCycleRow | undefined>(() => {
     if (!cycleId) return undefined;
@@ -112,13 +94,6 @@ export function Phase0Client({ cycleId, preview = false }: { cycleId?: string; p
     if (!setupId) return undefined;
     return setupsById[setupId] ?? BASE_SETUPS.find((s) => s.id === setupId);
   }, [existing?.setupId, setupsById]);
-
-  const defaultPreparationRule = setup?.preparationDueSchedule ?? DEFAULT_PREPARATION_DUE_SCHEDULE;
-  const defaultReviewRule = setup?.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE;
-  const defaultSubmissionRule = setup?.tpmSubmissionSchedule ?? DEFAULT_TPM_SUBMISSION_SCHEDULE;
-  const reviewDueRuleLabel = setup?.reviewDueSameAsPreparation
-    ? "Same as preparation due"
-    : describeRule(defaultReviewRule, setup?.recurrence ?? "Monthly");
   const additionalApproverOptions = useMemo(() => {
     return Array.from(
       new Set(
