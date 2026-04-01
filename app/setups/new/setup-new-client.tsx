@@ -7,6 +7,7 @@ import { loadProductCatalog, upsertProductToCatalog } from "../../../lib/product
 import {
   BASE_SETUPS,
   computeSetupEndDate,
+  DEFAULT_INITIATION_SCHEDULE,
   DEFAULT_PREPARATION_DUE_SCHEDULE,
   DEFAULT_REVIEW_DUE_SCHEDULE,
   DEFAULT_TPM_SUBMISSION_SCHEDULE,
@@ -97,6 +98,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
   if (recurrence === "Monthly") {
     if (rule.type === "FixedCalendarDate") return `${dayOfMonthLabel(rule.dayOfMonth)} of each month`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of each month`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of each month`;
+    }
     return `Last ${rule.weekday} of each month`;
   }
 
@@ -105,6 +109,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
     const label = quarterMonthLabel(monthInQuarter);
     if (rule.type === "FixedCalendarDate") return `${dayOfMonthLabel(rule.dayOfMonth)} of the ${label} month of each quarter`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of the ${label} month of each quarter`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of the ${label} month of each quarter`;
+    }
     return `Last ${rule.weekday} of the ${label} month of each quarter`;
   }
 
@@ -112,6 +119,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
   const monthName = MONTH_NAMES[monthOfYear - 1] ?? "March";
   if (rule.type === "FixedCalendarDate") return `${monthName} ${dayOfMonthLabel(rule.dayOfMonth)} of each year`;
   if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of ${monthName} each year`;
+  if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+    return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of ${monthName} each year`;
+  }
   return `Last ${rule.weekday} of ${monthName} each year`;
 }
 
@@ -144,7 +154,6 @@ export function SetupNewClient() {
   const [endDateMode, setEndDateMode] = useState<EndDateMode>("ExactDate");
   const [endDateOffsetValueRaw, setEndDateOffsetValueRaw] = useState("12");
   const [endDateOffsetUnit, setEndDateOffsetUnit] = useState<DurationUnit>("months");
-  const [initiationReminderDaysRaw, setInitiationReminderDaysRaw] = useState("14");
   const [automateInstanceInitiation, setAutomateInstanceInitiation] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -199,6 +208,7 @@ export function SetupNewClient() {
   const [preparationScheduleType, setPreparationScheduleType] = useState<TpmSubmissionScheduleRule["type"]>(
     DEFAULT_PREPARATION_DUE_SCHEDULE.type
   );
+  const [useDefaultPreparationRule, setUseDefaultPreparationRule] = useState(true);
   const [preparationFixedDayOfMonth, setPreparationFixedDayOfMonth] = useState<number>(
     DEFAULT_PREPARATION_DUE_SCHEDULE.type === "FixedCalendarDate" ? DEFAULT_PREPARATION_DUE_SCHEDULE.dayOfMonth : 17
   );
@@ -206,7 +216,7 @@ export function SetupNewClient() {
     DEFAULT_PREPARATION_DUE_SCHEDULE.type === "NthWeekdayOfMonth" ? DEFAULT_PREPARATION_DUE_SCHEDULE.nth : 3
   );
   const [preparationNthWeekday, setPreparationNthWeekday] = useState<Weekday>(
-    DEFAULT_PREPARATION_DUE_SCHEDULE.type === "NthWeekdayOfMonth" ? DEFAULT_PREPARATION_DUE_SCHEDULE.weekday : "Friday"
+    DEFAULT_PREPARATION_DUE_SCHEDULE.type === "NthWeekdayOfMonth" ? DEFAULT_PREPARATION_DUE_SCHEDULE.weekday : "Thursday"
   );
   const [preparationLastWeekday, setPreparationLastWeekday] = useState<Weekday>(
     DEFAULT_PREPARATION_DUE_SCHEDULE.type === "LastWeekdayOfMonth" ? DEFAULT_PREPARATION_DUE_SCHEDULE.weekday : "Thursday"
@@ -221,7 +231,7 @@ export function SetupNewClient() {
   const [reviewScheduleType, setReviewScheduleType] = useState<TpmSubmissionScheduleRule["type"]>(
     DEFAULT_REVIEW_DUE_SCHEDULE.type
   );
-  const [reviewDueSameAsPreparation, setReviewDueSameAsPreparation] = useState(true);
+  const [useDefaultReviewRule, setUseDefaultReviewRule] = useState(true);
   const [reviewFixedDayOfMonth, setReviewFixedDayOfMonth] = useState<number>(
     DEFAULT_REVIEW_DUE_SCHEDULE.type === "FixedCalendarDate" ? DEFAULT_REVIEW_DUE_SCHEDULE.dayOfMonth : 22
   );
@@ -239,6 +249,28 @@ export function SetupNewClient() {
   );
   const [reviewPeriodMonthOfYear, setReviewPeriodMonthOfYear] = useState<MonthOfYear>(
     (DEFAULT_REVIEW_DUE_SCHEDULE.periodMonthOfYear ?? 3) as MonthOfYear
+  );
+
+  const [initiationScheduleType, setInitiationScheduleType] = useState<TpmSubmissionScheduleRule["type"]>(
+    DEFAULT_INITIATION_SCHEDULE.type
+  );
+  const [initiationFixedDayOfMonth, setInitiationFixedDayOfMonth] = useState<number>(
+    DEFAULT_INITIATION_SCHEDULE.type === "FixedCalendarDate" ? DEFAULT_INITIATION_SCHEDULE.dayOfMonth : 1
+  );
+  const [initiationNth, setInitiationNth] = useState<NthWeekday>(
+    DEFAULT_INITIATION_SCHEDULE.type === "NthWeekdayOfMonth" ? DEFAULT_INITIATION_SCHEDULE.nth : 1
+  );
+  const [initiationNthWeekday, setInitiationNthWeekday] = useState<Weekday>(
+    DEFAULT_INITIATION_SCHEDULE.type === "NthWeekdayOfMonth" ? DEFAULT_INITIATION_SCHEDULE.weekday : "Monday"
+  );
+  const [initiationLastWeekday, setInitiationLastWeekday] = useState<Weekday>(
+    DEFAULT_INITIATION_SCHEDULE.type === "LastWeekdayOfMonth" ? DEFAULT_INITIATION_SCHEDULE.weekday : "Friday"
+  );
+  const [initiationPeriodMonthInQuarter, setInitiationPeriodMonthInQuarter] = useState<QuarterMonthInPeriod>(
+    (DEFAULT_INITIATION_SCHEDULE.periodMonthInQuarter ?? 1) as QuarterMonthInPeriod
+  );
+  const [initiationPeriodMonthOfYear, setInitiationPeriodMonthOfYear] = useState<MonthOfYear>(
+    (DEFAULT_INITIATION_SCHEDULE.periodMonthOfYear ?? 1) as MonthOfYear
   );
 
   useEffect(() => {
@@ -272,6 +304,9 @@ export function SetupNewClient() {
   })();
 
   const preparationDueSchedule: TpmSubmissionScheduleRule = (() => {
+    if (useDefaultPreparationRule) {
+      return DEFAULT_PREPARATION_DUE_SCHEDULE;
+    }
     if (preparationScheduleType === "FixedCalendarDate") {
       return {
         type: "FixedCalendarDate",
@@ -298,8 +333,8 @@ export function SetupNewClient() {
   })();
 
   const reviewDueSchedule: TpmSubmissionScheduleRule = (() => {
-    if (reviewDueSameAsPreparation) {
-      return preparationDueSchedule;
+    if (useDefaultReviewRule) {
+      return DEFAULT_REVIEW_DUE_SCHEDULE;
     }
     if (reviewScheduleType === "FixedCalendarDate") {
       return {
@@ -323,6 +358,32 @@ export function SetupNewClient() {
       weekday: reviewLastWeekday,
       periodMonthInQuarter: reviewPeriodMonthInQuarter,
       periodMonthOfYear: reviewPeriodMonthOfYear
+    };
+  })();
+
+  const initiationSchedule: TpmSubmissionScheduleRule = (() => {
+    if (initiationScheduleType === "FixedCalendarDate") {
+      return {
+        type: "FixedCalendarDate",
+        dayOfMonth: initiationFixedDayOfMonth,
+        periodMonthInQuarter: initiationPeriodMonthInQuarter,
+        periodMonthOfYear: initiationPeriodMonthOfYear
+      };
+    }
+    if (initiationScheduleType === "NthWeekdayOfMonth") {
+      return {
+        type: "NthWeekdayOfMonth",
+        nth: initiationNth,
+        weekday: initiationNthWeekday,
+        periodMonthInQuarter: initiationPeriodMonthInQuarter,
+        periodMonthOfYear: initiationPeriodMonthOfYear
+      };
+    }
+    return {
+      type: "LastWeekdayOfMonth",
+      weekday: initiationLastWeekday,
+      periodMonthInQuarter: initiationPeriodMonthInQuarter,
+      periodMonthOfYear: initiationPeriodMonthOfYear
     };
   })();
 
@@ -730,14 +791,43 @@ export function SetupNewClient() {
             <PowerInfoStrip tone="slate">
               Preparation due: <span className="font-semibold">{describeTpmSchedule(preparationDueSchedule, recurrence)}</span>
               <span className="mx-2 text-slate-300">|</span>
-              Review due: <span className="font-semibold">{reviewDueSameAsPreparation ? "Same as preparation due" : describeTpmSchedule(reviewDueSchedule, recurrence)}</span>
+              Review due: <span className="font-semibold">{describeTpmSchedule(reviewDueSchedule, recurrence)}</span>
             </PowerInfoStrip>
 
             <div className="grid gap-5 lg:grid-cols-2">
               <div className="space-y-4 border border-slate-300 bg-white p-4">
                 <div className="text-sm font-semibold text-slate-800">Preparation due rule</div>
 
-                {recurrence === "Quarterly" ? (
+                <div className="grid gap-3">
+                  <label className="flex items-start gap-3 border border-slate-300 bg-slate-50 px-4 py-3">
+                    <input
+                      type="radio"
+                      name="preparationRuleMode"
+                      className="mt-1"
+                      checked={useDefaultPreparationRule}
+                      onChange={() => setUseDefaultPreparationRule(true)}
+                    />
+                    <div className="flex-1 space-y-1">
+                      <div className="text-sm font-semibold text-slate-800">Default option according to S&amp;OP</div>
+                      <div className="text-sm text-slate-700">{describeTpmSchedule(DEFAULT_PREPARATION_DUE_SCHEDULE, recurrence)}</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                    <input
+                      type="radio"
+                      name="preparationRuleMode"
+                      className="mt-1"
+                      checked={!useDefaultPreparationRule}
+                      onChange={() => setUseDefaultPreparationRule(false)}
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-slate-800">Choose a custom rule</div>
+                    </div>
+                  </label>
+                </div>
+
+                {!useDefaultPreparationRule && recurrence === "Quarterly" ? (
                   <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Quarter alignment</div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -758,7 +848,7 @@ export function SetupNewClient() {
                   </div>
                 ) : null}
 
-                {recurrence === "Yearly" ? (
+                {!useDefaultPreparationRule && recurrence === "Yearly" ? (
                   <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Year alignment</div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -779,6 +869,7 @@ export function SetupNewClient() {
                   </div>
                 ) : null}
 
+                {!useDefaultPreparationRule ? (
                 <div className="grid gap-3">
                   <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
                     <input
@@ -870,27 +961,47 @@ export function SetupNewClient() {
                     </div>
                   </label>
                 </div>
+                ) : null}
               </div>
 
               <div className="space-y-4 border border-slate-300 bg-white p-4">
                 <div className="text-sm font-semibold text-slate-800">Review due rule</div>
 
-                <label className="flex items-center gap-3 border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800">
-                  <input
-                    type="checkbox"
-                    checked={reviewDueSameAsPreparation}
-                    onChange={(e) => setReviewDueSameAsPreparation(e.target.checked)}
-                  />
-                  <span>Review due is the same due date as the Preparation due date</span>
-                </label>
+                <div className="grid gap-3">
+                  <label className="flex items-start gap-3 border border-slate-300 bg-slate-50 px-4 py-3">
+                    <input
+                      type="radio"
+                      name="reviewRuleMode"
+                      className="mt-1"
+                      checked={useDefaultReviewRule}
+                      onChange={() => setUseDefaultReviewRule(true)}
+                    />
+                    <div className="flex-1 space-y-1">
+                      <div className="text-sm font-semibold text-slate-800">Default option according to S&amp;OP</div>
+                      <div className="text-sm text-slate-700">{describeTpmSchedule(DEFAULT_REVIEW_DUE_SCHEDULE, recurrence)}</div>
+                    </div>
+                  </label>
 
-                {reviewDueSameAsPreparation ? (
-                  <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    Review due will use the same rule as preparation due: <span className="font-semibold text-slate-900">{describeTpmSchedule(preparationDueSchedule, recurrence)}</span>
-                  </div>
-                ) : null}
+                  <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                    <input
+                      type="radio"
+                      name="reviewRuleMode"
+                      className="mt-1"
+                      checked={!useDefaultReviewRule}
+                      onChange={() => {
+                        setUseDefaultReviewRule(false);
+                        if (reviewScheduleType === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+                          setReviewScheduleType("NthWeekdayOfMonth");
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-slate-800">Choose a custom rule</div>
+                    </div>
+                  </label>
+                </div>
 
-                {!reviewDueSameAsPreparation && recurrence === "Quarterly" ? (
+                {!useDefaultReviewRule && recurrence === "Quarterly" ? (
                   <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Quarter alignment</div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -911,7 +1022,7 @@ export function SetupNewClient() {
                   </div>
                 ) : null}
 
-                {!reviewDueSameAsPreparation && recurrence === "Yearly" ? (
+                {!useDefaultReviewRule && recurrence === "Yearly" ? (
                   <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Year alignment</div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -932,7 +1043,7 @@ export function SetupNewClient() {
                   </div>
                 ) : null}
 
-                {!reviewDueSameAsPreparation ? (
+                {!useDefaultReviewRule ? (
                 <div className="grid gap-3">
                   <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
                     <input
@@ -1063,26 +1174,10 @@ export function SetupNewClient() {
         </PowerPanel>
 
         <PowerPanel title="Forecast instance initiation" tone="sky">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <PowerField
-              label="Default reminder to initiate forecast instance"
-              hint="This lead time is stored in days before the cycle start date."
-            >
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={0}
-                  className={`${powerInputClassName} w-32`}
-                  value={initiationReminderDaysRaw}
-                  onChange={(e) => setInitiationReminderDaysRaw(e.target.value)}
-                />
-                <span className="text-sm text-slate-700">days</span>
-              </div>
-            </PowerField>
-
+          <div className="space-y-4">
             <PowerField
               label="Automate forecast instance initiation"
-              hint="If enabled, the system auto-initiates an instance when it reaches the reminder lead time."
+              hint="If enabled, the system auto-initiates the instance on the selected rule. If disabled, the selected rule is used to send a reminder to initiate."
             >
               <select
                 className={powerInputClassName}
@@ -1093,6 +1188,145 @@ export function SetupNewClient() {
                 <option value="yes">Yes</option>
               </select>
             </PowerField>
+
+            <PowerInfoStrip tone="slate">
+              {automateInstanceInitiation ? "Auto-initiate on:" : "Send reminder to initiate on:"}{" "}
+              <span className="font-semibold">{describeTpmSchedule(initiationSchedule, recurrence)}</span>
+            </PowerInfoStrip>
+
+            {recurrence === "Quarterly" ? (
+              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Quarter alignment</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span>Apply rule to</span>
+                  <select
+                    className={powerInputClassName}
+                    value={initiationPeriodMonthInQuarter}
+                    onChange={(e) => setInitiationPeriodMonthInQuarter(Number(e.target.value) as QuarterMonthInPeriod)}
+                  >
+                    {QUARTER_MONTH_IN_PERIOD_OPTIONS.map((v) => (
+                      <option key={v} value={v}>
+                        {v === 1 ? "First month" : v === 2 ? "Second month" : "Last month"}
+                      </option>
+                    ))}
+                  </select>
+                  <span>of each quarter</span>
+                </div>
+              </div>
+            ) : null}
+
+            {recurrence === "Yearly" ? (
+              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Year alignment</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span>Apply rule in</span>
+                  <select
+                    className={powerInputClassName}
+                    value={initiationPeriodMonthOfYear}
+                    onChange={(e) => setInitiationPeriodMonthOfYear(Number(e.target.value) as MonthOfYear)}
+                  >
+                    {MONTH_OF_YEAR_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {MONTH_NAMES[m - 1]}
+                      </option>
+                    ))}
+                  </select>
+                  <span>each year</span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="grid gap-3">
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="initiationSchedule"
+                  className="mt-1"
+                  checked={initiationScheduleType === "FixedCalendarDate"}
+                  onChange={() => setInitiationScheduleType("FixedCalendarDate")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Fixed calendar day of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Day of month</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      className="w-24 rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={initiationFixedDayOfMonth}
+                      onChange={(e) => setInitiationFixedDayOfMonth(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="initiationSchedule"
+                  className="mt-1"
+                  checked={initiationScheduleType === "NthWeekdayOfMonth"}
+                  onChange={() => setInitiationScheduleType("NthWeekdayOfMonth")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Nth weekday of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Nth</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={initiationNth}
+                      onChange={(e) => setInitiationNth(Number(e.target.value) as NthWeekday)}
+                    >
+                      {NTH_WEEKDAY_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                    <span>Weekday</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={initiationNthWeekday}
+                      onChange={(e) => setInitiationNthWeekday(e.target.value as Weekday)}
+                    >
+                      {WEEKDAY_OPTIONS.map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
+                <input
+                  type="radio"
+                  name="initiationSchedule"
+                  className="mt-1"
+                  checked={initiationScheduleType === "LastWeekdayOfMonth"}
+                  onChange={() => setInitiationScheduleType("LastWeekdayOfMonth")}
+                />
+                <div className="flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-slate-800">Last weekday of period</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Weekday</span>
+                    <select
+                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
+                      value={initiationLastWeekday}
+                      onChange={(e) => setInitiationLastWeekday(e.target.value as Weekday)}
+                    >
+                      {WEEKDAY_OPTIONS.map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <PowerCommandBar>
@@ -1120,9 +1354,6 @@ export function SetupNewClient() {
                   parsedEndDateOffset,
                   endDateOffsetUnit
                 );
-                const parsedInitiationReminderDays =
-                  initiationReminderDaysRaw.trim() === "" ? null : Number(initiationReminderDaysRaw);
-
                 if (!tpm.trim() || products.length === 0) {
                   setError("TPM and at least one Product are required.");
                   return;
@@ -1145,13 +1376,6 @@ export function SetupNewClient() {
                 }
                 if (approvers.length === 0) {
                   setError("At least one EM Manager is required.");
-                  return;
-                }
-                if (
-                  parsedInitiationReminderDays !== null &&
-                  (!Number.isFinite(parsedInitiationReminderDays) || parsedInitiationReminderDays < 0)
-                ) {
-                  setError("Default initiation reminder must be zero or greater.");
                   return;
                 }
 
@@ -1188,13 +1412,9 @@ export function SetupNewClient() {
                       : null,
                   endDateOffsetUnit,
                   preparationDueSchedule,
-                  reviewDueSameAsPreparation,
                   reviewDueSchedule,
                   tpmSubmissionSchedule,
-                  initiationReminderDays:
-                    parsedInitiationReminderDays !== null && Number.isFinite(parsedInitiationReminderDays)
-                      ? Math.max(0, Math.floor(parsedInitiationReminderDays))
-                      : null,
+                  initiationSchedule,
                   automateInstanceInitiation
                 };
 

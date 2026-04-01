@@ -61,6 +61,9 @@ function describeRule(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
   if (recurrence === "Monthly") {
     if (rule.type === "FixedCalendarDate") return `${ordinal(rule.dayOfMonth)} of each month`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of each month`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of each month`;
+    }
     return `Last ${rule.weekday} of each month`;
   }
 
@@ -69,6 +72,9 @@ function describeRule(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
     const label = monthInQuarter === 1 ? "first" : monthInQuarter === 2 ? "second" : "last";
     if (rule.type === "FixedCalendarDate") return `${ordinal(rule.dayOfMonth)} of the ${label} month of each quarter`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of the ${label} month of each quarter`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of the ${label} month of each quarter`;
+    }
     return `Last ${rule.weekday} of the ${label} month of each quarter`;
   }
 
@@ -76,6 +82,9 @@ function describeRule(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
   const monthName = MONTH_NAMES[monthOfYear - 1] ?? "March";
   if (rule.type === "FixedCalendarDate") return `${monthName} ${ordinal(rule.dayOfMonth)} of each year`;
   if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of ${monthName} each year`;
+  if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+    return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of ${monthName} each year`;
+  }
   return `Last ${rule.weekday} of ${monthName} each year`;
 }
 

@@ -7,6 +7,7 @@ import { PHASES } from "../../lib/phases";
 import { forecastFolderRoute } from "../../lib/forecastFolders";
 import {
   BASE_SETUPS,
+  DEFAULT_INITIATION_SCHEDULE,
   DEFAULT_PREPARATION_DUE_SCHEDULE,
   DEFAULT_REVIEW_DUE_SCHEDULE,
   formatProductsLabel,
@@ -73,6 +74,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
   if (recurrence === "Monthly") {
     if (rule.type === "FixedCalendarDate") return `${ordinal(rule.dayOfMonth)} of each month`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of each month`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of each month`;
+    }
     return `Last ${rule.weekday} of each month`;
   }
 
@@ -81,6 +85,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
     const label = monthInQuarter === 1 ? "first" : monthInQuarter === 2 ? "second" : "last";
     if (rule.type === "FixedCalendarDate") return `${ordinal(rule.dayOfMonth)} of the ${label} month of each quarter`;
     if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of the ${label} month of each quarter`;
+    if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+      return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of the ${label} month of each quarter`;
+    }
     return `Last ${rule.weekday} of the ${label} month of each quarter`;
   }
 
@@ -88,6 +95,9 @@ function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurr
   const monthName = MONTH_NAMES[monthOfYear - 1] ?? "March";
   if (rule.type === "FixedCalendarDate") return `${monthName} ${ordinal(rule.dayOfMonth)} of each year`;
   if (rule.type === "NthWeekdayOfMonth") return `${ordinal(rule.nth)} ${rule.weekday} of ${monthName} each year`;
+  if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+    return `${rule.followingWeekday} following the ${ordinal(rule.nth)} ${rule.anchorWeekday} of ${monthName} each year`;
+  }
   return `Last ${rule.weekday} of ${monthName} each year`;
 }
 
@@ -168,20 +178,18 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
               </div>
               <div>
                 <span className="font-medium">Review due rule:</span>{" "}
-                {setup.reviewDueSameAsPreparation
-                  ? "Same as preparation due"
-                  : describeTpmSchedule(setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE, setup.recurrence)}
+                {describeTpmSchedule(setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE, setup.recurrence)}
               </div>
               <div>
                 <span className="font-medium">TPM submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
               </div>
               <div>
-                <span className="font-medium">Default initiation reminder:</span>{" "}
-                {typeof setup.initiationReminderDays === "number" ? `${setup.initiationReminderDays} day(s)` : "—"}
-              </div>
-              <div>
                 <span className="font-medium">Automate forecast instance initiation:</span>{" "}
                 {setup.automateInstanceInitiation ? "Yes" : "No"}
+              </div>
+              <div>
+                <span className="font-medium">{setup.automateInstanceInitiation ? "Auto-initiate rule:" : "Reminder to initiate rule:"}</span>{" "}
+                {describeTpmSchedule(setup.initiationSchedule ?? DEFAULT_INITIATION_SCHEDULE, setup.recurrence)}
               </div>
             </div>
           </div>

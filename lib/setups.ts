@@ -35,6 +35,12 @@ export type TpmSubmissionScheduleRule =
       weekday: Weekday;
     } & TpmSubmissionScheduleAlignment)
   | ({
+      type: "FollowingWeekdayAfterNthWeekdayOfMonth";
+      nth: NthWeekday;
+      anchorWeekday: Weekday;
+      followingWeekday: Weekday;
+    } & TpmSubmissionScheduleAlignment)
+  | ({
       type: "LastWeekdayOfMonth";
       weekday: Weekday;
     } & TpmSubmissionScheduleAlignment);
@@ -49,17 +55,25 @@ export const DEFAULT_TPM_SUBMISSION_SCHEDULE: TpmSubmissionScheduleRule = {
 export const DEFAULT_PREPARATION_DUE_SCHEDULE: TpmSubmissionScheduleRule = {
   type: "NthWeekdayOfMonth",
   nth: 3,
-  weekday: "Friday",
+  weekday: "Thursday",
   periodMonthInQuarter: 3,
   periodMonthOfYear: 3
 };
 
 export const DEFAULT_REVIEW_DUE_SCHEDULE: TpmSubmissionScheduleRule = {
-  type: "NthWeekdayOfMonth",
+  type: "FollowingWeekdayAfterNthWeekdayOfMonth",
   nth: 3,
-  weekday: "Friday",
+  anchorWeekday: "Thursday",
+  followingWeekday: "Friday",
   periodMonthInQuarter: 3,
   periodMonthOfYear: 3
+};
+
+export const DEFAULT_INITIATION_SCHEDULE: TpmSubmissionScheduleRule = {
+  type: "FixedCalendarDate",
+  dayOfMonth: 1,
+  periodMonthInQuarter: 1,
+  periodMonthOfYear: 1
 };
 
 export type SetupRow = {
@@ -82,10 +96,9 @@ export type SetupRow = {
   endDateOffsetValue?: number | null;
   endDateOffsetUnit?: DurationUnit;
   preparationDueSchedule: TpmSubmissionScheduleRule;
-  reviewDueSameAsPreparation?: boolean;
   reviewDueSchedule: TpmSubmissionScheduleRule;
   tpmSubmissionSchedule: TpmSubmissionScheduleRule;
-  initiationReminderDays?: number | null;
+  initiationSchedule: TpmSubmissionScheduleRule;
   automateInstanceInitiation?: boolean;
 };
 
@@ -149,10 +162,9 @@ export const BASE_SETUPS: SetupRow[] = [
     endDateOffsetValue: null,
     endDateOffsetUnit: "months",
     preparationDueSchedule: DEFAULT_PREPARATION_DUE_SCHEDULE,
-    reviewDueSameAsPreparation: true,
     reviewDueSchedule: DEFAULT_REVIEW_DUE_SCHEDULE,
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    initiationReminderDays: 14,
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
     automateInstanceInitiation: false
   },
   {
@@ -181,7 +193,6 @@ export const BASE_SETUPS: SetupRow[] = [
       periodMonthInQuarter: 3,
       periodMonthOfYear: 3
     },
-    reviewDueSameAsPreparation: false,
     reviewDueSchedule: {
       type: "NthWeekdayOfMonth",
       nth: 3,
@@ -190,7 +201,13 @@ export const BASE_SETUPS: SetupRow[] = [
       periodMonthOfYear: 3
     },
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
-    initiationReminderDays: 21,
+    initiationSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Monday",
+      periodMonthInQuarter: 1,
+      periodMonthOfYear: 1
+    },
     automateInstanceInitiation: true
   }
 ];

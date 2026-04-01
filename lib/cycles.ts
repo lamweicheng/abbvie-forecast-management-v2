@@ -1,5 +1,5 @@
 import type { SetupRow, Recurrence, TpmSubmissionScheduleRule, Weekday } from "./setups";
-import { DEFAULT_PREPARATION_DUE_SCHEDULE, DEFAULT_REVIEW_DUE_SCHEDULE } from "./setups";
+import { DEFAULT_INITIATION_SCHEDULE, DEFAULT_PREPARATION_DUE_SCHEDULE, DEFAULT_REVIEW_DUE_SCHEDULE } from "./setups";
 import { BASE_SETUPS } from "./setups";
 import { formatProductsLabel } from "./setups";
 import { PILLARS } from "./constants";
@@ -20,7 +20,8 @@ export type ForecastCycleRow = {
   tpmLocation?: string;
   tpmPreviousCompanyName?: string;
   bindingPeriod?: string;
-  initiationReminderDays?: number | null;
+  initiationSchedule?: TpmSubmissionScheduleRule;
+  initiationTargetDate?: string;
   automateInstanceInitiation?: boolean;
 
   requestedBy?: string;
@@ -77,22 +78,11 @@ function endOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), daysInMonth(date.getFullYear(), date.getMonth()));
 }
 
-function parseIsoDate(isoDate: string) {
-  const [y, m, d] = isoDate.split("-").map((v) => Number(v));
-  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1));
-}
-
 function formatIsoDate(date: Date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
   const d = String(date.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-function subtractCalendarDays(isoDate: string, days: number) {
-  const date = parseIsoDate(isoDate);
-  date.setUTCDate(date.getUTCDate() - Math.max(0, Math.floor(days)));
-  return formatIsoDate(date);
 }
 
 function todayIsoUtc() {
@@ -126,6 +116,22 @@ function computeTpmDueDate(rule: TpmSubmissionScheduleRule, year: number, monthI
     while (day > dim) day -= 7;
     day = Math.max(1, day);
     return iso(year, monthIndex0 + 1, day);
+  }
+
+  if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+    const anchorTarget = weekdayToJsIndex(rule.anchorWeekday);
+    const first = new Date(Date.UTC(year, monthIndex0, 1));
+    const anchorOffset = (anchorTarget - first.getUTCDay() + 7) % 7;
+    let anchorDay = 1 + anchorOffset + (rule.nth - 1) * 7;
+    while (anchorDay > dim) anchorDay -= 7;
+    anchorDay = Math.max(1, anchorDay);
+
+    const anchorDate = new Date(Date.UTC(year, monthIndex0, anchorDay));
+    const followingTarget = weekdayToJsIndex(rule.followingWeekday);
+    let followingOffset = (followingTarget - anchorDate.getUTCDay() + 7) % 7;
+    if (followingOffset === 0) followingOffset = 7;
+    anchorDate.setUTCDate(anchorDate.getUTCDate() + followingOffset);
+    return formatIsoDate(anchorDate);
   }
 
   // LastWeekdayOfMonth
@@ -240,24 +246,21 @@ export function generateCyclesForSetup(
       periodStart,
       periodEnd
     );
-    const approverReviewDue = setup.reviewDueSameAsPreparation
-      ? gspForecastDue
-      : computeScheduledDueDate(
-          setup.recurrence,
-          setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE,
-          periodStart,
-          periodEnd
-        );
-    const initiationReminderDays =
-      typeof setup.initiationReminderDays === "number" && Number.isFinite(setup.initiationReminderDays)
-        ? Math.max(0, Math.floor(setup.initiationReminderDays))
-        : null;
+    const approverReviewDue = computeScheduledDueDate(
+      setup.recurrence,
+      setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE,
+      periodStart,
+      periodEnd
+    );
+    const initiationSchedule = setup.initiationSchedule ?? DEFAULT_INITIATION_SCHEDULE;
+    const initiationTargetDate = computeScheduledDueDate(
+      setup.recurrence,
+      initiationSchedule,
+      periodStart,
+      periodEnd
+    );
     const automateInstanceInitiation = Boolean(setup.automateInstanceInitiation);
-    const automatedRequestedDate =
-      automateInstanceInitiation && initiationReminderDays !== null
-        ? subtractCalendarDays(cycleStartIso, initiationReminderDays)
-        : undefined;
-    const autoInitiated = Boolean(automatedRequestedDate && automatedRequestedDate <= todayIsoUtc());
+    const autoInitiated = Boolean(automateInstanceInitiation && initiationTargetDate <= todayIsoUtc());
 
     cycles.push({
       id,
@@ -271,12 +274,13 @@ export function generateCyclesForSetup(
       tpmLocation: setup.tpmLocation,
       tpmPreviousCompanyName: setup.tpmPreviousCompanyName,
       bindingPeriod: setup.bindingPeriod,
-      initiationReminderDays,
+      initiationSchedule,
+      initiationTargetDate,
       automateInstanceInitiation,
       requestedBy: autoInitiated ? "Automated schedule" : undefined,
-      requestedDate: autoInitiated ? automatedRequestedDate : undefined,
+      requestedDate: autoInitiated ? initiationTargetDate : undefined,
       emManagerComments: autoInitiated
-        ? `This instance was auto-initiated ${initiationReminderDays} day(s) before the cycle start based on setup defaults.`
+        ? `This instance was auto-initiated on ${initiationTargetDate} based on setup defaults.`
         : undefined,
       assignees: setup.assignees,
       approvers: setup.approvers,
