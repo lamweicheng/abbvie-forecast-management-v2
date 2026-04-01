@@ -149,7 +149,7 @@ export function SetupsTableClient() {
                   Setups define a recurring forecast template (Pillar, TPM, Products, default GSP Planner(s), EM Manager(s), Additional Approver(s), cadence, and TPM submission schedule rule).
                 </div>
                 <div>
-                  Each setup generates forecast instances with default due dates automatically populated based on the TPM submission due date anchor.
+                  Each setup generates forecast instances between the configured contract start date and contract end date, with default due dates automatically populated from the setup rules.
                 </div>
               </div>
               <ol className="space-y-2">
@@ -265,7 +265,7 @@ export function SetupsTableClient() {
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">TPM</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Products</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Forecast Cadence</th>
-              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Window</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold">Contract Dates</th>
               <th className="border-r border-slate-400 px-4 py-3 text-right text-sm font-semibold">Instances</th>
               <th className="border-r border-slate-400 px-4 py-3 text-right text-sm font-semibold">Completed</th>
               <th className="px-4 py-3 text-right text-sm font-semibold">Open</th>

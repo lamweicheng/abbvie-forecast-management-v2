@@ -513,7 +513,7 @@ export function SetupNewClient() {
             />
             </PowerField>
 
-            <PowerField label="Start date">
+            <PowerField label="Contract Start Date">
             <input
               type="date"
               className={powerInputClassName}
@@ -522,7 +522,7 @@ export function SetupNewClient() {
             />
             </PowerField>
 
-            <PowerField label="End date">
+            <PowerField label="Contract End Date">
             <div className="space-y-3">
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input
@@ -531,7 +531,7 @@ export function SetupNewClient() {
                   checked={endDateMode === "ExactDate"}
                   onChange={() => setEndDateMode("ExactDate")}
                 />
-                Use an exact end date
+                Use an exact contract end date
               </label>
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input
@@ -540,7 +540,7 @@ export function SetupNewClient() {
                   checked={endDateMode === "RelativeOffset"}
                   onChange={() => setEndDateMode("RelativeOffset")}
                 />
-                Set end date relative to the start date
+                Set contract end date relative to the contract start date
               </label>
 
               {endDateMode === "ExactDate" ? (
@@ -568,10 +568,10 @@ export function SetupNewClient() {
                       <option value="days">Days</option>
                       <option value="months">Months</option>
                     </select>
-                    <span className="text-sm text-slate-700">after the start date</span>
+                    <span className="text-sm text-slate-700">after the contract start date</span>
                   </div>
                   <div className="text-sm text-slate-600">
-                    Calculated end date: <span className="font-semibold text-slate-900">{computedEndDate || "—"}</span>
+                    Calculated contract end date: <span className="font-semibold text-slate-900">{computedEndDate || "—"}</span>
                   </div>
                 </div>
               )}
@@ -1128,15 +1128,15 @@ export function SetupNewClient() {
                   return;
                 }
                 if (!startDate || !resolvedEndDate) {
-                  setError("Start date and end date are required.");
+                  setError("Contract start date and contract end date are required.");
                   return;
                 }
                 if (resolvedEndDate < startDate) {
-                  setError("End date must be on/after the start date.");
+                  setError("Contract end date must be on/after the contract start date.");
                   return;
                 }
                 if (endDateMode === "RelativeOffset" && (parsedEndDateOffset === null || !Number.isFinite(parsedEndDateOffset))) {
-                  setError("Enter a valid end date offset.");
+                  setError("Enter a valid contract end date offset.");
                   return;
                 }
                 if (assignees.length === 0) {

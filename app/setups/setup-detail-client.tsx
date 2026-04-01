@@ -151,13 +151,16 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                 </div>
               ) : null}
               <div>
-                <span className="font-medium">Window:</span> {setup.startDate} - {setup.endDate}
+                <span className="font-medium">Contract Start Date:</span> {setup.startDate}
               </div>
               <div>
-                <span className="font-medium">End date rule:</span>{" "}
+                <span className="font-medium">Contract End Date:</span> {setup.endDate}
+              </div>
+              <div>
+                <span className="font-medium">Contract end date rule:</span>{" "}
                 {setup.endDateMode === "RelativeOffset" && typeof setup.endDateOffsetValue === "number"
-                  ? `${setup.endDateOffsetValue} ${setup.endDateOffsetUnit ?? "days"} after start date`
-                  : "Exact end date"}
+                  ? `${setup.endDateOffsetValue} ${setup.endDateOffsetUnit ?? "days"} after contract start date`
+                  : "Exact contract end date"}
               </div>
               <div>
                 <span className="font-medium">Preparation due rule:</span>{" "}

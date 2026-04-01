@@ -12,14 +12,14 @@ type ForecastFolderCycleLike = {
 export type ForecastFolderMode = "final" | "draft";
 
 export function forecastFolderRoute(cycleId: string, mode: ForecastFolderMode = "final") {
-  const suffix = mode === "draft" ? "?mode=draft" : "";
+  const suffix = mode === "draft" ? "?mode=in-progress" : "";
   return `/forecast-folders/${encodeURIComponent(cycleId)}${suffix}`;
 }
 
 export function forecastFolderName(cycle?: ForecastFolderCycleLike, mode: ForecastFolderMode = "final") {
   const tpm = cycle?.tpm?.trim() || "Unknown TPM";
   const productsLabel = formatProductsLabel(cycle?.products ?? []) || "Unknown Product";
-  return `${tpm} (${productsLabel})${mode === "draft" ? " Draft" : ""}`;
+  return `${tpm} (${productsLabel})${mode === "draft" ? "" : ""}`;
 }
 
 function cyclePeriodToken(cycle?: ForecastFolderCycleLike) {
@@ -46,7 +46,7 @@ export function forecastConfirmationFileName(cycle?: ForecastFolderCycleLike) {
 
 export function forecastDraftFileName(cycle?: ForecastFolderCycleLike) {
   const tpm = cycle?.tpm?.trim() || "TPM";
-  return `${tpm}_Draft_${cyclePeriodToken(cycle)}`;
+  return `${tpm}_Forecast_${cyclePeriodToken(cycle)}`;
 }
 
 export function forecastReferenceFileName(cycle?: ForecastFolderCycleLike) {

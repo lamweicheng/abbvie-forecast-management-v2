@@ -390,19 +390,23 @@ function Phase3Client({
           </PowerInfoStrip>
 
           <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Approved forecast folder</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">In-progress forecast folder</div>
             <div className="mt-2 space-y-1">
               {cycleId ? (
                 <>
-                  <Link href={forecastFolderRoute(cycleId)} className="font-medium text-slate-900 underline underline-offset-2">
-                    Open approved forecast folder
+                  <Link href={forecastFolderRoute(cycleId, "draft")} className="font-medium text-slate-900 underline underline-offset-2">
+                    Open in-progress forecast folder
                   </Link>
-                  <div className="text-xs text-slate-500">{forecastFolderName(cycle)}</div>
+                  <div className="text-xs text-slate-500">{forecastFolderName(cycle, "draft")}</div>
                 </>
               ) : (
                 <span className="text-slate-500">Forecast folder link will appear once the instance is available.</span>
               )}
             </div>
+          </div>
+
+          <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+            The finalized forecast folder is only created in Phase 5 after the finalized forecast file and TPM confirmation email are submitted together.
           </div>
 
           <div className="border border-slate-300 bg-white px-4 py-4">
@@ -415,7 +419,7 @@ function Phase3Client({
                 checked={sentToTpm}
                 onChange={(e) => setSentToTpm(e.target.checked)}
               />
-              I have sent the forecast folder link to TPM via Outlook
+              I have sent the in-progress forecast folder link to TPM via Outlook
             </label>
           </div>
 

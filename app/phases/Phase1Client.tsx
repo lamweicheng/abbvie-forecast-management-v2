@@ -103,7 +103,7 @@ export function Phase1Client({ cycleId, preview = false }: { cycleId?: string; p
                 <input type="file" className={powerFileClassName} disabled={preview} />
                 {cycleId ? (
                   <div className="text-sm text-slate-600">
-                    Stored in draft folder:{" "}
+                    Stored in in-progress folder:{" "}
                     <a
                       href={forecastFolderRoute(cycleId, "draft")}
                       className="font-medium text-slate-900 underline underline-offset-2"

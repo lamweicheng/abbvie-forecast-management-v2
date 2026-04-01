@@ -65,7 +65,7 @@ export function Phase2Client({ cycleId, preview = false }: { cycleId?: string; p
               {cycleId ? (
                 <>
                   <Link href={forecastFolderRoute(cycleId, "draft")} className="font-medium text-slate-900 underline underline-offset-2">
-                    Open submitted draft folder
+                    Open in-progress folder
                   </Link>
                   <div className="mt-1 text-xs text-slate-500">{forecastFolderName(cycle, "draft")}</div>
                 </>

@@ -26,7 +26,7 @@ export default function ForecastFolderPage({
 }) {
   const { cyclesById } = useSessionCycles();
   const searchParams = useSearchParams();
-  const mode = searchParams.get("mode") === "draft" ? "draft" : "final";
+  const mode = searchParams.get("mode") === "in-progress" ? "draft" : "final";
   const allCycles = useMemo(() => mergeById(BASE_CYCLES, cyclesById), [cyclesById]);
 
   const cycle = useMemo(() => {
@@ -39,6 +39,7 @@ export default function ForecastFolderPage({
   const modifiedDate = cycle?.tpmConfirmedDate ?? cycle?.sentToTpmDate ?? cycle?.approverReviewDue ?? cycle?.tpmSubmissionDue ?? "—";
   const workflowHref = cycle ? `/phases/${cycle.phaseId}?cycle=${encodeURIComponent(cycle.id)}` : "/";
   const isDraftFolder = mode === "draft";
+  const folderCategoryLabel = isDraftFolder ? "In Progress Forecast" : "Finalized Forecast";
   const matchingCycles = useMemo(() => {
     if (!cycle?.setupId) return [] as typeof allCycles;
     return allCycles
@@ -109,7 +110,7 @@ export default function ForecastFolderPage({
               <div className="flex flex-wrap items-center gap-2 text-[16px]">
                 <span>Documents</span>
                 <span>›</span>
-                <span className="font-semibold">Forecast</span>
+                <span className="font-semibold">{folderCategoryLabel}</span>
                 <span>›</span>
                 <span className="font-semibold text-slate-900">{folderName}</span>
               </div>
@@ -145,7 +146,7 @@ export default function ForecastFolderPage({
                 <div className="text-3xl font-semibold text-slate-900">This folder is empty</div>
                 <div className="mt-4 text-base text-slate-500">
                   {isDraftFolder
-                    ? "Draft forecast files will appear here after Phase 2 uploads."
+                    ? "In-progress forecast files will appear here after Phase 2 uploads."
                     : "Finalized forecast files and TPM confirmation email will appear here after Phase 5."}
                 </div>
               </div>
