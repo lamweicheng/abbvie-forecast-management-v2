@@ -45,6 +45,15 @@ export type ForecastCycleRow = {
   tpmConfirmedDate?: string; // YYYY-MM-DD
   tpmOutcome?: "approved" | "changes_requested";
   tpmChangeRequest?: string;
+  poTrackedByAutomation?: boolean;
+  poAutomationCapturedAt?: string; // YYYY-MM-DD
+  poAutomationMailbox?: string;
+  poAutomationEmailSubject?: string;
+  poAutomationAttachmentSaved?: boolean;
+  poSubmittedViaOutlook?: boolean;
+  poEmailSentDate?: string; // YYYY-MM-DD
+  poAcknowledgementReceived?: "Yes" | "No";
+  poAcknowledgedDate?: string; // YYYY-MM-DD
   closeRequested?: boolean;
 
   phaseId: CyclePhaseId;
@@ -326,6 +335,15 @@ function seededCycles(): ForecastCycleRow[] {
       requestedBy: "EM Manager A",
       requestedDate: "2026-01-03",
       emManagerComments: "Please align assumptions with last cycle and highlight key drivers.",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-01-25",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM A | Product A | Jan 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-01-25",
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: "2026-01-27",
       phaseId: 4,
       forecastPdfHref: forecastFolderRoute(s1[0].id),
       closed: true
@@ -338,6 +356,13 @@ function seededCycles(): ForecastCycleRow[] {
       requestedDate: "2026-02-03",
       emManagerComments: "Focus on supply constraints and risks.",
       assigneeComments: "Uploaded forecast. Please review the updated assumptions.",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-02-25",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM A | Product A | Feb 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-02-25",
       phaseId: 2,
       closed: false
     } satisfies Partial<ForecastCycleRow>);

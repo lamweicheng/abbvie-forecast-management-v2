@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PHASES } from "../../lib/phases";
 import { forecastFolderRoute } from "../../lib/forecastFolders";
+import { getPurchaseOrderStatus } from "../../lib/purchaseOrders";
 import {
   BASE_SETUPS,
   DEFAULT_INITIATION_SCHEDULE,
@@ -43,6 +44,32 @@ function currentPhaseBadge(row: ForecastCycleRow) {
     label: `Phase ${row.phaseId + 1}`,
     detail: phase,
     cls: "border-slate-300 bg-slate-50 text-slate-900"
+  };
+}
+
+function purchaseOrderBadge(row: ForecastCycleRow) {
+  const status = getPurchaseOrderStatus(row);
+
+  if (status === "Submitted - Acknowledged") {
+    return {
+      label: status,
+      detail: row.poAcknowledgedDate ? `TPM acknowledged on ${row.poAcknowledgedDate}` : "TPM acknowledgment recorded",
+      cls: "border-emerald-300 bg-emerald-50 text-emerald-900"
+    };
+  }
+
+  if (status === "Submitted - Not Acknowledged") {
+    return {
+      label: status,
+      detail: row.poEmailSentDate ? `Sent on ${row.poEmailSentDate}` : "Awaiting TPM acknowledgment",
+      cls: "border-amber-300 bg-amber-50 text-amber-900"
+    };
+  }
+
+  return {
+    label: status,
+    detail: "PO has not been sent yet",
+    cls: "border-rose-300 bg-rose-50 text-rose-900"
   };
 }
 
@@ -243,7 +270,8 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Period</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Due Date</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Current Forecast Phase</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Folder</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Folder</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">PO Status</th>
             </tr>
           </thead>
           <tbody>
@@ -288,12 +316,32 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                     <span className="text-slate-400">—</span>
                   )}
                 </td>
+                <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">
+                  {(() => {
+                    const b = purchaseOrderBadge(c);
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          className={`inline-flex w-fit rounded-sm border px-2 py-1 text-xs font-semibold ${b.cls}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/po/${encodeURIComponent(c.id)}`);
+                          }}
+                        >
+                          {b.label}
+                        </button>
+                        <span className="text-xs text-slate-600 whitespace-nowrap">{b.detail}</span>
+                      </div>
+                    );
+                  })()}
+                </td>
               </tr>
             ))}
 
             {cycles.length === 0 && (
               <tr>
-                <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={5}>
+                <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={6}>
                   No instances generated for this setup.
                 </td>
               </tr>
