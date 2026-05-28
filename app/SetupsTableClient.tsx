@@ -108,6 +108,14 @@ export function SetupsTableClient() {
           <button
             type="button"
             className="rounded-sm border border-white bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+            onClick={() => router.push(`/central`)}
+          >
+            Central
+          </button>
+
+          <button
+            type="button"
+            className="rounded-sm border border-white bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
             onClick={() => router.push(`/setups/new`)}
           >
             Create New Setup

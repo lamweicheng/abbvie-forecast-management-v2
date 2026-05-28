@@ -329,6 +329,9 @@ function seededCycles(): ForecastCycleRow[] {
   const bySetup = (setupId: string) => cycles.filter((c) => c.setupId === setupId).sort((a, b) => a.cycleStart.localeCompare(b.cycleStart));
   const s1 = bySetup("FS-001");
   const s2 = bySetup("FS-002");
+  const s3 = bySetup("FS-003");
+  const s4 = bySetup("FS-004");
+  const s5 = bySetup("FS-005");
 
   if (s1[0]) {
     Object.assign(s1[0], {
@@ -405,6 +408,78 @@ function seededCycles(): ForecastCycleRow[] {
       emManagerComments: "Q1 kickoff.",
       phaseId: 0,
       closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s3[8]) {
+    Object.assign(s3[8], {
+      requestedBy: "EM Manager C",
+      requestedDate: "2026-03-30",
+      emManagerComments: "April packaging cycle initiated.",
+      assigneeComments: "Draft uploaded for TPM review.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-04-10",
+      phaseId: 3,
+      closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s3[9]) {
+    Object.assign(s3[9], {
+      requestedBy: "EM Manager C",
+      requestedDate: "2026-04-29",
+      emManagerComments: "May cycle awaiting EM review.",
+      assigneeComments: "Packaging assumptions refreshed.",
+      phaseId: 2,
+      closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s4[2]) {
+    Object.assign(s4[2], {
+      requestedBy: "EM Manager A",
+      requestedDate: "2026-04-01",
+      emManagerComments: "API cycle due this month.",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-04-29",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM D | Product D | Apr 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-04-29",
+      poAcknowledgementReceived: "No",
+      phaseId: 4,
+      closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s4[3]) {
+    Object.assign(s4[3], {
+      requestedBy: "EM Manager A",
+      requestedDate: "2026-05-02",
+      emManagerComments: "May API cycle just opened.",
+      phaseId: 1,
+      closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s5[2]) {
+    Object.assign(s5[2], {
+      requestedBy: "EM Manager B",
+      requestedDate: "2026-03-31",
+      emManagerComments: "Q2 BDS cycle approved and sent.",
+      assigneeComments: "Quarterly forecast published.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-06-18",
+      tpmConfirmedDate: "2026-06-20",
+      tpmOutcome: "approved",
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-06-20",
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: "2026-06-23",
+      phaseId: 4,
+      forecastPdfHref: forecastFolderRoute(s5[2].id),
+      closed: true
     } satisfies Partial<ForecastCycleRow>);
   }
 

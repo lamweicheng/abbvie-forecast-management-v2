@@ -86,6 +86,7 @@ export type SetupRow = {
   bindingPeriod?: string;
   firmPeriod?: number | null;
   rollingForecastHorizon?: number | null;
+  tpmAcknowledgementRequirement?: string;
   assignees: string[];
   approvers: string[];
   additionalApprovers: string[];
@@ -139,6 +140,68 @@ export function formatProductsLabel(products: string[]) {
   return (products ?? []).filter(Boolean).join(", ");
 }
 
+function ordinal(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n}st`;
+  if (mod10 === 2 && mod100 !== 12) return `${n}nd`;
+  if (mod10 === 3 && mod100 !== 13) return `${n}rd`;
+  return `${n}th`;
+}
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
+
+const MONTH_SHORT_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function formatRollingForecastHorizon(months?: number | null) {
+  if (typeof months !== "number") return "—";
+  return `${months} ${months === 1 ? "Month" : "Months"}`;
+}
+
+export function formatFirmPeriod(months?: number | null) {
+  if (typeof months !== "number") return "—";
+  return `${months} ${months === 1 ? "Month" : "Months"}`;
+}
+
+export function formatContractEffectiveDates(startDate: string, endDate: string) {
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
+  const startLabel = `${MONTH_SHORT_NAMES[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+  const endLabel = `${MONTH_SHORT_NAMES[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
+  return `${startLabel} - ${endLabel}`;
+}
+
+export function describeTpmSubmissionScheduleSummary(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
+  if (rule.type === "FixedCalendarDate") {
+    if (recurrence === "Monthly") return ordinal(rule.dayOfMonth);
+    return `${ordinal(rule.dayOfMonth)}`;
+  }
+
+  if (rule.type === "NthWeekdayOfMonth") {
+    return `${ordinal(rule.nth)} ${rule.weekday}`;
+  }
+
+  if (rule.type === "FollowingWeekdayAfterNthWeekdayOfMonth") {
+    return `${rule.followingWeekday} after ${ordinal(rule.nth)} ${rule.anchorWeekday}`;
+  }
+
+  if (rule.weekday === "Friday") return "End of Month";
+  return `Last ${rule.weekday}`;
+}
+
 export const RECURRENCE_OPTIONS: Recurrence[] = ["Monthly", "Quarterly", "Yearly"];
 
 export const BASE_SETUPS: SetupRow[] = [
@@ -152,6 +215,7 @@ export const BASE_SETUPS: SetupRow[] = [
     bindingPeriod: "12 months",
     firmPeriod: 3,
     rollingForecastHorizon: 12,
+    tpmAcknowledgementRequirement: "Required within 5 business days",
     assignees: ["GSP Planner A"],
     approvers: ["EM Manager A", "EM Manager B"],
     additionalApprovers: ["Pillar Lead A"],
@@ -177,6 +241,7 @@ export const BASE_SETUPS: SetupRow[] = [
     bindingPeriod: "18 months",
     firmPeriod: 6,
     rollingForecastHorizon: 18,
+    tpmAcknowledgementRequirement: "No formal acknowledgment",
     assignees: ["EM Manager", "GSP Planner B"],
     approvers: ["EM Manager B"],
     additionalApprovers: ["Pillar Lead A"],
@@ -207,6 +272,304 @@ export const BASE_SETUPS: SetupRow[] = [
       weekday: "Monday",
       periodMonthInQuarter: 1,
       periodMonthOfYear: 1
+    },
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-003",
+    pillar: "Packaging",
+    tpm: "TPM C",
+    products: ["Product C", "Product C2"],
+    tpmLocation: "Latin America",
+    tpmPreviousCompanyName: "Company Z",
+    bindingPeriod: "2 months",
+    firmPeriod: 4,
+    rollingForecastHorizon: 24,
+    tpmAcknowledgementRequirement: "Email confirmation required",
+    assignees: ["GSP Planner C"],
+    approvers: ["EM Manager C"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Monthly",
+    startDate: "2025-07-01",
+    endDate: "2027-07-31",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Wednesday"
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Thursday"
+    },
+    tpmSubmissionSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Thursday"
+    },
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-004",
+    pillar: "API",
+    tpm: "TPM D",
+    products: ["Product D"],
+    tpmLocation: "North America",
+    bindingPeriod: "1 month",
+    firmPeriod: 2,
+    rollingForecastHorizon: 9,
+    tpmAcknowledgementRequirement: "Meeting confirmation required",
+    assignees: ["GSP Planner A"],
+    approvers: ["EM Manager A"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Monthly",
+    startDate: "2026-02-01",
+    endDate: "2026-09-30",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Tuesday"
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Wednesday"
+    },
+    tpmSubmissionSchedule: {
+      type: "LastWeekdayOfMonth",
+      weekday: "Friday"
+    },
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-005",
+    pillar: "BDS",
+    tpm: "TPM E",
+    products: ["Product E"],
+    tpmLocation: "Europe",
+    bindingPeriod: "3 months",
+    firmPeriod: 6,
+    rollingForecastHorizon: 15,
+    tpmAcknowledgementRequirement: "Acknowledgement email within 3 business days",
+    assignees: ["GSP Planner B"],
+    approvers: ["EM Manager B"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Quarterly",
+    startDate: "2025-10-01",
+    endDate: "2027-03-31",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Thursday",
+      periodMonthInQuarter: 3
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Thursday",
+      periodMonthInQuarter: 3
+    },
+    tpmSubmissionSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 20,
+      periodMonthInQuarter: 3
+    },
+    initiationSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Monday",
+      periodMonthInQuarter: 1
+    },
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-006",
+    pillar: "Device",
+    tpm: "TPM F",
+    products: ["Product F", "Product F2"],
+    tpmLocation: "Asia Pacific",
+    bindingPeriod: "2 months",
+    firmPeriod: 4,
+    rollingForecastHorizon: 18,
+    tpmAcknowledgementRequirement: "Email acknowledgement within 2 business days",
+    assignees: ["GSP Planner A", "GSP Planner C"],
+    approvers: ["EM Manager A"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Monthly",
+    startDate: "2025-11-01",
+    endDate: "2027-10-31",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Tuesday"
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Wednesday"
+    },
+    tpmSubmissionSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 3,
+      weekday: "Friday"
+    },
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-007",
+    pillar: "Aseptic",
+    tpm: "TPM G",
+    products: ["Product G"],
+    tpmLocation: "Europe",
+    bindingPeriod: "4 months",
+    firmPeriod: 9,
+    rollingForecastHorizon: 24,
+    tpmAcknowledgementRequirement: "Acknowledgement required by email",
+    assignees: ["GSP Planner B"],
+    approvers: ["EM Manager B", "EM Manager C"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Quarterly",
+    startDate: "2025-04-01",
+    endDate: "2028-03-31",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Wednesday",
+      periodMonthInQuarter: 3
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Wednesday",
+      periodMonthInQuarter: 3
+    },
+    tpmSubmissionSchedule: {
+      type: "LastWeekdayOfMonth",
+      weekday: "Thursday",
+      periodMonthInQuarter: 3
+    },
+    initiationSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Monday",
+      periodMonthInQuarter: 1
+    },
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-008",
+    pillar: "Packaging",
+    tpm: "TPM H",
+    products: ["Product H"],
+    tpmLocation: "North America",
+    bindingPeriod: "1 month",
+    firmPeriod: 3,
+    rollingForecastHorizon: 12,
+    tpmAcknowledgementRequirement: "No formal acknowledgment",
+    assignees: ["GSP Planner C"],
+    approvers: ["EM Manager C"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Monthly",
+    startDate: "2026-01-01",
+    endDate: "2026-07-31",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 10
+    },
+    reviewDueSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 15
+    },
+    tpmSubmissionSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 20
+    },
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-009",
+    pillar: "API",
+    tpm: "TPM I",
+    products: ["Product I", "Product I2"],
+    tpmLocation: "Latin America",
+    bindingPeriod: "2 months",
+    firmPeriod: 5,
+    rollingForecastHorizon: 15,
+    tpmAcknowledgementRequirement: "Meeting or email confirmation",
+    assignees: ["GSP Planner A"],
+    approvers: ["EM Manager A", "EM Manager B"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Monthly",
+    startDate: "2025-09-01",
+    endDate: "2027-02-28",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Thursday"
+    },
+    reviewDueSchedule: {
+      type: "FollowingWeekdayAfterNthWeekdayOfMonth",
+      nth: 1,
+      anchorWeekday: "Thursday",
+      followingWeekday: "Friday"
+    },
+    tpmSubmissionSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 24
+    },
+    initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
+    automateInstanceInitiation: true
+  },
+  {
+    id: "FS-010",
+    pillar: "BDS",
+    tpm: "TPM J",
+    products: ["Product J"],
+    tpmLocation: "Asia Pacific",
+    bindingPeriod: "6 months",
+    firmPeriod: 12,
+    rollingForecastHorizon: 24,
+    tpmAcknowledgementRequirement: "Written acknowledgement within 5 business days",
+    assignees: ["GSP Planner B", "GSP Planner C"],
+    approvers: ["EM Manager B"],
+    additionalApprovers: ["Pillar Lead A"],
+    recurrence: "Quarterly",
+    startDate: "2024-10-01",
+    endDate: "2027-09-30",
+    endDateMode: "ExactDate",
+    preparationDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 2,
+      weekday: "Tuesday",
+      periodMonthInQuarter: 3
+    },
+    reviewDueSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 3,
+      weekday: "Tuesday",
+      periodMonthInQuarter: 3
+    },
+    tpmSubmissionSchedule: {
+      type: "FixedCalendarDate",
+      dayOfMonth: 22,
+      periodMonthInQuarter: 3
+    },
+    initiationSchedule: {
+      type: "NthWeekdayOfMonth",
+      nth: 1,
+      weekday: "Monday",
+      periodMonthInQuarter: 1
     },
     automateInstanceInitiation: true
   }
