@@ -11,7 +11,9 @@ import {
   buildCentralDashboard,
   type CentralDueRow,
   type CentralExpirationRow,
+  type CentralLeadershipSignal,
   type CentralSetupSummaryRow,
+  type CentralTpmAttentionRow,
   type MetricSummary
 } from "../../lib/metrics";
 
@@ -74,6 +76,15 @@ export default function CentralPage() {
           </div>
 
           <div className="space-y-6 bg-[#f4f4f4] px-5 py-5">
+            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+              <LeadershipSummaryPanel
+                overall={dashboard.executive.overall}
+                thisMonth={dashboard.executive.thisMonth}
+                thisQuarter={dashboard.executive.thisQuarter}
+              />
+              <TpmAttentionPanel rows={dashboard.tpmAttentionRows} />
+            </section>
+
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {dashboard.headline.map((metric) => (
                 <MetricCard key={metric.label} metric={metric} />
@@ -95,6 +106,79 @@ export default function CentralPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function leadershipToneClassName(tone: CentralLeadershipSignal["tone"]) {
+  if (tone === "emerald") return "border-emerald-300 bg-emerald-50 text-emerald-950";
+  if (tone === "amber") return "border-amber-300 bg-amber-50 text-amber-950";
+  return "border-rose-300 bg-rose-50 text-rose-950";
+}
+
+function LeadershipSummaryPanel({
+  overall,
+  thisMonth,
+  thisQuarter
+}: {
+  overall: CentralLeadershipSignal;
+  thisMonth: CentralLeadershipSignal;
+  thisQuarter: CentralLeadershipSignal;
+}) {
+  return (
+    <section className="overflow-hidden border border-slate-300 bg-white">
+      <div className="border-b border-slate-300 bg-slate-100 px-4 py-3">
+        <h2 className="text-lg font-semibold text-slate-900">Leadership Snapshot</h2>
+        <p className="mt-1 text-sm text-slate-600">A three-second view of whether the month and quarter are on track.</p>
+      </div>
+      <div className="grid gap-3 p-4 md:grid-cols-3">
+        {[overall, thisMonth, thisQuarter].map((signal) => (
+          <div key={signal.label} className={["border px-4 py-4", leadershipToneClassName(signal.tone)].join(" ")}>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">{signal.label}</div>
+            <div className="mt-3 text-3xl font-semibold">{signal.value}</div>
+            <div className="mt-2 text-sm leading-6 text-slate-700">{signal.detail}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TpmAttentionPanel({ rows }: { rows: CentralTpmAttentionRow[] }) {
+  return (
+    <section className="overflow-hidden border border-slate-300 bg-white">
+      <div className="border-b border-slate-300 bg-slate-100 px-4 py-3">
+        <h2 className="text-lg font-semibold text-slate-900">TPMs Needing Attention</h2>
+        <p className="mt-1 text-sm text-slate-600">The shortest list leaders need for quick escalation and drill-down.</p>
+      </div>
+      {rows.length === 0 ? (
+        <div className="px-4 py-10 text-sm text-slate-500">No TPMs are currently flagged for overdue forecasts, pending PO acknowledgements, or upcoming contract expirations.</div>
+      ) : (
+        <div className="divide-y divide-slate-200">
+          {rows.map((row) => (
+            <div key={`${row.tpm}-${row.setupId}`} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={["inline-flex rounded-sm border px-2 py-1 text-xs font-semibold", leadershipToneClassName(row.tone)].join(" ")}>
+                    {row.tone === "emerald" ? "Green" : row.tone === "amber" ? "Orange" : "Red"}
+                  </span>
+                  <span className="text-base font-semibold text-slate-900">{row.tpm}</span>
+                </div>
+                <div className="mt-1 text-sm text-slate-700">{row.issueSummary}</div>
+                <div className="mt-1 text-sm text-slate-500">{row.products || "No products listed"}</div>
+              </div>
+              {row.setupId ? (
+                <Link
+                  href={`/setups/${encodeURIComponent(row.setupId)}`}
+                  className="inline-flex shrink-0 items-center rounded-sm border border-slate-400 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                >
+                  View details
+                </Link>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

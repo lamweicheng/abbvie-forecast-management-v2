@@ -49,8 +49,30 @@ export type CentralExpirationRow = {
   daysRemaining: number;
 };
 
+export type CentralLeadershipSignal = {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "emerald" | "amber" | "rose";
+};
+
+export type CentralTpmAttentionRow = {
+  tpm: string;
+  setupId: string;
+  products: string;
+  issueSummary: string;
+  issueScore: number;
+  tone: "emerald" | "amber" | "rose";
+};
+
 export type CentralDashboardData = {
   headline: MetricSummary[];
+  executive: {
+    overall: CentralLeadershipSignal;
+    thisMonth: CentralLeadershipSignal;
+    thisQuarter: CentralLeadershipSignal;
+  };
+  tpmAttentionRows: CentralTpmAttentionRow[];
   dueThisMonthRows: CentralDueRow[];
   dueNextThreeMonthsRows: CentralDueRow[];
   upcomingExpirations: CentralExpirationRow[];
@@ -136,6 +158,45 @@ function formatAverageDays(values: number[]) {
   const avg = average(values);
   if (avg === null) return "—";
   return `${avg.toFixed(1)} days`;
+}
+
+function healthTone(healthyCount: number, totalCount: number): "emerald" | "amber" | "rose" {
+  if (!totalCount) return "emerald";
+  const ratio = healthyCount / totalCount;
+  if (ratio >= 0.9) return "emerald";
+  if (ratio >= 0.75) return "amber";
+  return "rose";
+}
+
+function trafficLightLabel(tone: "emerald" | "amber" | "rose") {
+  if (tone === "emerald") return "Green";
+  if (tone === "amber") return "Orange";
+  return "Red";
+}
+
+function buildLeadershipSignal(label: string, cycles: ForecastCycleRow[], today: Date): CentralLeadershipSignal {
+  if (!cycles.length) {
+    return {
+      label,
+      value: "Clear",
+      detail: "No forecast commitments are due in this period.",
+      tone: "emerald"
+    };
+  }
+
+  const healthyCount = cycles.filter((cycle) => {
+    const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
+    if (!dueDate) return false;
+    return cycle.closed || dueDate >= today;
+  }).length;
+  const tone = healthTone(healthyCount, cycles.length);
+
+  return {
+    label,
+    value: formatRatio(healthyCount, cycles.length),
+    detail: `${healthyCount} of ${cycles.length} due forecasts are currently on track.`,
+    tone
+  };
 }
 
 function forecastSubmitted(cycle: ForecastCycleRow) {
@@ -309,6 +370,7 @@ export function buildCentralDashboard(
   const thisMonthEnd = endOfMonth(today);
   const threeMonthsEnd = endOfMonth(addMonths(today, 2));
   const expirationEnd = addMonths(today, 3);
+  const todayIso = today.toISOString().slice(0, 10);
 
   const mapDueRow = (cycle: ForecastCycleRow) => {
       const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
@@ -331,10 +393,18 @@ export function buildCentralDashboard(
     .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue))
     .map(mapDueRow);
 
+  const dueThisMonthCycles = scopedCycles
+    .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, thisMonthEnd))
+    .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue));
+
   const dueNextThreeMonthsRows = scopedCycles
     .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, threeMonthsEnd))
     .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue))
     .map(mapDueRow);
+
+  const dueThisQuarterCycles = scopedCycles
+    .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, threeMonthsEnd))
+    .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue));
 
   const dueInThreeMonthsCount = dueNextThreeMonthsRows.length;
   const forecastSubmittedCount = scopedCycles.filter(forecastSubmitted).length;
@@ -369,6 +439,61 @@ export function buildCentralDashboard(
       contractEffectiveDates: formatContractEffectiveDates(setup.startDate, setup.endDate)
     }));
 
+  const monthSignal = buildLeadershipSignal("Month health", dueThisMonthCycles, today);
+  const quarterSignal = buildLeadershipSignal("Quarter health", dueThisQuarterCycles, today);
+  const overallTone = monthSignal.tone === "rose" || quarterSignal.tone === "rose"
+    ? "rose"
+    : monthSignal.tone === "amber" || quarterSignal.tone === "amber"
+      ? "amber"
+      : "emerald";
+
+  const tpmAttentionRows = Array.from(new Set(scopedCycles.map((cycle) => cycle.tpm).filter(Boolean)))
+    .map((tpm) => {
+      const tpmCycles = scopedCycles.filter((cycle) => cycle.tpm === tpm);
+      const tpmSetups = scopedSetups
+        .filter((setup) => setup.tpm === tpm)
+        .sort((a, b) => a.id.localeCompare(b.id));
+      const overdueCount = tpmCycles.filter((cycle) => {
+        const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
+        return Boolean(dueDate && dueDate < today && !cycle.closed);
+      }).length;
+      const dueThisMonthOpenCount = tpmCycles.filter(
+        (cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, thisMonthEnd) && !cycle.closed
+      ).length;
+      const pendingPoCount = tpmCycles.filter(
+        (cycle) => getPurchaseOrderStatus(cycle) === "Submitted - Not Acknowledged"
+      ).length;
+      const expiringContractCount = tpmSetups.filter((setup) => {
+        const daysRemaining = dayDifference(todayIso, setup.endDate);
+        return daysRemaining !== null && daysRemaining <= 90;
+      }).length;
+      const issueScore = (overdueCount * 4) + (pendingPoCount * 2) + (expiringContractCount * 2) + dueThisMonthOpenCount;
+      const issueSummary = [
+        overdueCount ? `${overdueCount} overdue` : null,
+        dueThisMonthOpenCount ? `${dueThisMonthOpenCount} due this month` : null,
+        pendingPoCount ? `${pendingPoCount} pending PO ack` : null,
+        expiringContractCount ? `${expiringContractCount} expiring contract` : null
+      ].filter(Boolean).join(" • ");
+      const products = Array.from(new Set(tpmSetups.flatMap((setup) => setup.products ?? []).filter(Boolean))).join(", ");
+      const tone: CentralTpmAttentionRow["tone"] = overdueCount > 0
+        ? "rose"
+        : pendingPoCount > 0 || expiringContractCount > 0
+          ? "amber"
+          : "emerald";
+
+      return {
+        tpm,
+        setupId: tpmSetups[0]?.id ?? tpmCycles[0]?.setupId ?? "",
+        products,
+        issueSummary,
+        issueScore,
+        tone
+      };
+    })
+    .filter((row) => row.issueScore > 0)
+    .sort((a, b) => b.issueScore - a.issueScore || a.tpm.localeCompare(b.tpm))
+    .slice(0, 5);
+
   return {
     headline: [
       {
@@ -396,6 +521,17 @@ export function buildCentralDashboard(
         tone: onTimeForecastSubmissions === forecastSubmittedCount ? "emerald" : "amber"
       }
     ],
+    executive: {
+      overall: {
+        label: "Leadership signal",
+        value: trafficLightLabel(overallTone),
+        detail: `${monthSignal.value} on the month and ${quarterSignal.value} on the quarter.`,
+        tone: overallTone
+      },
+      thisMonth: monthSignal,
+      thisQuarter: quarterSignal
+    },
+    tpmAttentionRows,
     dueThisMonthRows,
     dueNextThreeMonthsRows,
     upcomingExpirations,
