@@ -47,7 +47,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
   const [poEmailSentDate, setPoEmailSentDate] = useState("");
   const [poAcknowledgementReceived, setPoAcknowledgementReceived] = useState<"" | "Yes" | "No">("");
   const [poAcknowledgedDate, setPoAcknowledgedDate] = useState("");
-  const [poOriginalRequestedDateSame, setPoOriginalRequestedDateSame] = useState<"" | "Yes" | "No">("");
+  const [poOriginalRequestedDateSame, setPoOriginalRequestedDateSame] = useState<"" | "Yes" | "No" | "Mixed">("");
   const [poAcknowledgementComments, setPoAcknowledgementComments] = useState("");
   const [poTrackedByAutomation, setPoTrackedByAutomation] = useState(false);
   const [poAutomationCapturedAt, setPoAutomationCapturedAt] = useState("");
@@ -155,7 +155,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
 
             <section className="space-y-4 border border-slate-300 bg-slate-50 px-4 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">PO Submission</h2>
+                <h2 className="text-lg font-semibold text-slate-900">PO Submission to TPM</h2>
               </div>
 
               {automationStatus === "Automated" ? (
@@ -248,19 +248,6 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                 </select>
               </PowerField>
 
-              <PowerField label="Is the Original Requested Date the same?">
-                <select
-                  className={powerInputClassName}
-                  value={poOriginalRequestedDateSame}
-                  onChange={(e) => setPoOriginalRequestedDateSame(e.target.value as "" | "Yes" | "No")}
-                  disabled={poAcknowledgementReceived !== "Yes"}
-                >
-                  <option value="">Select</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </PowerField>
-
               <PowerField label="Date TPM acknowledged">
                 <input
                   type="date"
@@ -271,9 +258,23 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                 />
               </PowerField>
 
+              <PowerField label="Are the original requested delivery dates the same?">
+                <select
+                  className={powerInputClassName}
+                  value={poOriginalRequestedDateSame}
+                  onChange={(e) => setPoOriginalRequestedDateSame(e.target.value as "" | "Yes" | "No" | "Mixed")}
+                  disabled={poAcknowledgementReceived !== "Yes"}
+                >
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="Mixed">Mixed</option>
+                </select>
+              </PowerField>
+
               <PowerField label="Comments">
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-600">Please add any additional details as needed.</p>
+                  <p className="text-sm text-slate-600">Please add any additional details as needed. If you responded No or Mixed on the original requested delivery date field, please explain the new requested delivery dates.</p>
                   <textarea
                     className={[powerInputClassName, "min-h-28 resize-y"].join(" ")}
                     value={poAcknowledgementComments}
