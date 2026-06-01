@@ -47,6 +47,8 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
   const [poEmailSentDate, setPoEmailSentDate] = useState("");
   const [poAcknowledgementReceived, setPoAcknowledgementReceived] = useState<"" | "Yes" | "No">("");
   const [poAcknowledgedDate, setPoAcknowledgedDate] = useState("");
+  const [poOriginalRequestedDateSame, setPoOriginalRequestedDateSame] = useState<"" | "Yes" | "No">("");
+  const [poAcknowledgementComments, setPoAcknowledgementComments] = useState("");
   const [poTrackedByAutomation, setPoTrackedByAutomation] = useState(false);
   const [poAutomationCapturedAt, setPoAutomationCapturedAt] = useState("");
   const [poAutomationMailbox, setPoAutomationMailbox] = useState("");
@@ -60,6 +62,8 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
     setPoEmailSentDate(cycle?.poEmailSentDate ?? cycle?.poAutomationCapturedAt ?? "");
     setPoAcknowledgementReceived(cycle?.poAcknowledgementReceived ?? "");
     setPoAcknowledgedDate(cycle?.poAcknowledgedDate ?? "");
+    setPoOriginalRequestedDateSame(cycle?.poOriginalRequestedDateSame ?? "");
+    setPoAcknowledgementComments(cycle?.poAcknowledgementComments ?? "");
     setPoTrackedByAutomation(Boolean(cycle?.poTrackedByAutomation));
     setPoAutomationCapturedAt(cycle?.poAutomationCapturedAt ?? "");
     setPoAutomationMailbox(cycle?.poAutomationMailbox ?? "");
@@ -104,7 +108,13 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
       poSubmittedViaOutlook: automationFound ? true : poSubmittedViaOutlook,
       poEmailSentDate: automationFound ? (poAutomationCapturedAt || poEmailSentDate || undefined) : (poEmailSentDate || undefined),
       poAcknowledgementReceived: poAcknowledgementReceived || undefined,
-      poAcknowledgedDate: poAcknowledgementReceived === "Yes" && poAcknowledgedDate ? poAcknowledgedDate : undefined
+      poAcknowledgedDate: poAcknowledgementReceived === "Yes" && poAcknowledgedDate ? poAcknowledgedDate : undefined,
+      poOriginalRequestedDateSame: poAcknowledgementReceived === "Yes" && poOriginalRequestedDateSame
+        ? poOriginalRequestedDateSame
+        : undefined,
+      poAcknowledgementComments: poAcknowledgementReceived === "Yes" && poAcknowledgementComments.trim()
+        ? poAcknowledgementComments.trim()
+        : undefined
     });
   };
 
@@ -146,10 +156,6 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
             <section className="space-y-4 border border-slate-300 bg-slate-50 px-4 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">PO Submission</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  A shared mailbox can be copied on the PO email so a Power Automate flow can detect the message,
-                  capture TPM and product details from the subject line, save the email into the PO folder, and update the submission fields below automatically.
-                </p>
               </div>
 
               {automationStatus === "Automated" ? (
@@ -158,7 +164,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                 </PowerInfoStrip>
               ) : (
                 <PowerInfoStrip tone="amber">
-                  No automated PO email was found. Enter the PO submission manually below.
+                  No automated PO email was found. Please resend the email to po-submissions@abbvie.example. Otherwise, enter the PO submission manually below.
                 </PowerInfoStrip>
               )}
 
@@ -219,7 +225,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
 
             <section className="space-y-4 border border-slate-300 bg-slate-50 px-4 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">TPM Acknowledgement</h2>
+                <h2 className="text-lg font-semibold text-slate-900">TPM Acknowledgement of Purchase Order (PO)</h2>
               </div>
 
               <PowerField label="Received TPM acknowledgment via email/meeting">
@@ -231,8 +237,23 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                     setPoAcknowledgementReceived(nextValue);
                     if (nextValue !== "Yes") {
                       setPoAcknowledgedDate("");
+                      setPoOriginalRequestedDateSame("");
+                      setPoAcknowledgementComments("");
                     }
                   }}
+                >
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </PowerField>
+
+              <PowerField label="Is the Original Requested Date the same?">
+                <select
+                  className={powerInputClassName}
+                  value={poOriginalRequestedDateSame}
+                  onChange={(e) => setPoOriginalRequestedDateSame(e.target.value as "" | "Yes" | "No")}
+                  disabled={poAcknowledgementReceived !== "Yes"}
                 >
                   <option value="">Select</option>
                   <option value="Yes">Yes</option>
@@ -248,6 +269,18 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                   onChange={(e) => setPoAcknowledgedDate(e.target.value)}
                   disabled={poAcknowledgementReceived !== "Yes"}
                 />
+              </PowerField>
+
+              <PowerField label="Comments">
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600">Please add any additional details as needed.</p>
+                  <textarea
+                    className={[powerInputClassName, "min-h-28 resize-y"].join(" ")}
+                    value={poAcknowledgementComments}
+                    onChange={(e) => setPoAcknowledgementComments(e.target.value)}
+                    disabled={poAcknowledgementReceived !== "Yes"}
+                  />
+                </div>
               </PowerField>
             </section>
           </div>

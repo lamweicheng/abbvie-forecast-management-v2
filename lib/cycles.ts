@@ -54,6 +54,8 @@ export type ForecastCycleRow = {
   poEmailSentDate?: string; // YYYY-MM-DD
   poAcknowledgementReceived?: "Yes" | "No";
   poAcknowledgedDate?: string; // YYYY-MM-DD
+  poOriginalRequestedDateSame?: "Yes" | "No";
+  poAcknowledgementComments?: string;
   closeRequested?: boolean;
 
   phaseId: CyclePhaseId;
