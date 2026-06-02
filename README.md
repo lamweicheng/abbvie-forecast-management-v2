@@ -1,12 +1,12 @@
-# Forecast Management Portal
+# Forecast and PO Management Portal
 
-Lightweight, click-through forecast management portal for AbbVie. This is a UI prototype focused on demonstrating the workflow and screens, not a production-ready system.
+Lightweight, click-through forecast and purchase order management portal for AbbVie. This is a UI prototype focused on demonstrating the workflow and screens, not a production-ready system.
 
 ## What’s included
 
-- Landing page with a Records table and filters.
+- Landing page with a records table and filters for forecast and PO status.
 - Phase screens (1–6) that show the key UI for each step.
-- Setup (Forecast Cycle Pre-Setup) screens to configure the recurring template (pillar/products/TPM, recurrence + window, default roles, and TPM submission scheduling rule).
+- Setup screens to configure the recurring template (pillar/products/TPM, recurrence + window, default roles, and TPM submission scheduling rule) that drives both forecast execution and downstream PO tracking.
 
 ## Phases
 

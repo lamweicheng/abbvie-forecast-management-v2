@@ -51,9 +51,9 @@ export default function CentralPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">Central View</div>
-                <h1 className="mt-2 text-3xl font-semibold">Central Forecast Overview</h1>
+                <h1 className="mt-2 text-3xl font-semibold">Central Forecast and PO Overview</h1>
                 <p className="mt-2 max-w-4xl text-sm text-white/90">
-                  A central or pillar lead view of due forecasts, current phase distribution, upcoming contract expirations, and on-time submission performance.
+                  A central or pillar lead view of due forecasts, PO follow-up, current phase distribution, upcoming contract expirations, and on-time submission performance.
                 </p>
               </div>
 

@@ -16,9 +16,9 @@ export default function HomePage() {
                 priority
               />
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight">Forecast Management System</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">Forecast and PO Management System</h1>
                 <p className="mt-1 text-sm text-slate-300">
-                  Core mockup aligned to the previous Power Apps-style program layout.
+                  Core mockup aligned to the previous Power Apps-style workflow for forecast and PO management.
                 </p>
               </div>
             </div>

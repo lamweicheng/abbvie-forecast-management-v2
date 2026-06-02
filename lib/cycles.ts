@@ -327,7 +327,7 @@ function seededCycles(): ForecastCycleRow[] {
     cycles.push(...generateCyclesForSetup(setup, cycles.map((c) => c.id)));
   }
 
-  // Make a few seeds feel realistic (cover phases 1–5).
+  // Make a few seeds feel realistic and easy to understand in the UI.
   const bySetup = (setupId: string) => cycles.filter((c) => c.setupId === setupId).sort((a, b) => a.cycleStart.localeCompare(b.cycleStart));
   const s1 = bySetup("FS-001");
   const s2 = bySetup("FS-002");
@@ -340,6 +340,10 @@ function seededCycles(): ForecastCycleRow[] {
       requestedBy: "EM Manager A",
       requestedDate: "2026-01-03",
       emManagerComments: "Please align assumptions with last cycle and highlight key drivers.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-01-24",
+      tpmConfirmedDate: "2026-01-25",
+      tpmOutcome: "approved",
       poTrackedByAutomation: true,
       poAutomationCapturedAt: "2026-01-25",
       poAutomationMailbox: "po-submissions@abbvie.example",
@@ -359,8 +363,12 @@ function seededCycles(): ForecastCycleRow[] {
     Object.assign(s1[1], {
       requestedBy: "EM Manager A",
       requestedDate: "2026-02-03",
-      emManagerComments: "Focus on supply constraints and risks.",
-      assigneeComments: "Uploaded forecast. Please review the updated assumptions.",
+      emManagerComments: "Forecast completed and TPM acknowledged the submitted PO.",
+      assigneeComments: "Final forecast approved and published.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-02-24",
+      tpmConfirmedDate: "2026-02-25",
+      tpmOutcome: "approved",
       poTrackedByAutomation: true,
       poAutomationCapturedAt: "2026-02-25",
       poAutomationMailbox: "po-submissions@abbvie.example",
@@ -368,8 +376,11 @@ function seededCycles(): ForecastCycleRow[] {
       poAutomationAttachmentSaved: true,
       poSubmittedViaOutlook: true,
       poEmailSentDate: "2026-02-25",
-      phaseId: 2,
-      closed: false
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: "2026-02-27",
+      phaseId: 4,
+      forecastPdfHref: forecastFolderRoute(s1[1].id),
+      closed: true
     } satisfies Partial<ForecastCycleRow>);
   }
 
@@ -377,9 +388,24 @@ function seededCycles(): ForecastCycleRow[] {
     Object.assign(s1[2], {
       requestedBy: "EM Manager A",
       requestedDate: "2026-03-03",
-      emManagerComments: "March cycle created and queued.",
-      phaseId: 0,
-      closed: false
+      emManagerComments: "Forecast completed and TPM acknowledged the submitted PO.",
+      assigneeComments: "Final forecast approved and published.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-03-24",
+      tpmConfirmedDate: "2026-03-25",
+      tpmOutcome: "approved",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-03-25",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM A | Product A | Mar 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-03-25",
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: "2026-03-27",
+      phaseId: 4,
+      forecastPdfHref: forecastFolderRoute(s1[2].id),
+      closed: true
     } satisfies Partial<ForecastCycleRow>);
   }
 
@@ -387,9 +413,24 @@ function seededCycles(): ForecastCycleRow[] {
     Object.assign(s1[3], {
       requestedBy: "EM Manager A",
       requestedDate: "2026-04-03",
-      emManagerComments: "April cycle scheduled.",
-      phaseId: 0,
-      closed: false
+      emManagerComments: "Forecast completed and TPM acknowledged the submitted PO.",
+      assigneeComments: "Final forecast approved and published.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-04-24",
+      tpmConfirmedDate: "2026-04-25",
+      tpmOutcome: "approved",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-04-25",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM A | Product A | Apr 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-04-25",
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: "2026-04-28",
+      phaseId: 4,
+      forecastPdfHref: forecastFolderRoute(s1[3].id),
+      closed: true
     } satisfies Partial<ForecastCycleRow>);
   }
 
@@ -397,7 +438,76 @@ function seededCycles(): ForecastCycleRow[] {
     Object.assign(s1[4], {
       requestedBy: "EM Manager A",
       requestedDate: "2026-05-03",
-      emManagerComments: "May cycle scheduled.",
+      emManagerComments: "Forecast completed and PO sent, but TPM acknowledgment is still pending.",
+      assigneeComments: "Final forecast approved and published.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-05-24",
+      tpmConfirmedDate: "2026-05-25",
+      tpmOutcome: "approved",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: "2026-05-25",
+      poAutomationMailbox: "po-submissions@abbvie.example",
+      poAutomationEmailSubject: "PO Submission | TPM A | Product A | May 2026",
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: "2026-05-25",
+      poAcknowledgementReceived: "No",
+      poAcknowledgedDate: undefined,
+      phaseId: 4,
+      forecastPdfHref: forecastFolderRoute(s1[4].id),
+      closed: true
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  if (s1[5]) {
+    Object.assign(s1[5], {
+      requestedBy: "EM Manager A",
+      requestedDate: "2026-06-02",
+      emManagerComments: "Current June cycle is in progress with forecast preparation underway.",
+      assigneeComments: "Current working forecast is being prepared.",
+      sentToTpm: undefined,
+      sentToTpmDate: undefined,
+      tpmConfirmedDate: undefined,
+      tpmOutcome: undefined,
+      poTrackedByAutomation: undefined,
+      poAutomationCapturedAt: undefined,
+      poAutomationMailbox: undefined,
+      poAutomationEmailSubject: undefined,
+      poAutomationAttachmentSaved: undefined,
+      poSubmittedViaOutlook: undefined,
+      poEmailSentDate: undefined,
+      poAcknowledgementReceived: undefined,
+      poAcknowledgedDate: undefined,
+      forecastPdfHref: undefined,
+      phaseId: 1,
+      closed: false
+    } satisfies Partial<ForecastCycleRow>);
+  }
+
+  for (const [index, cycle] of s1.entries()) {
+    if (index < 6 || !cycle) continue;
+
+    const monthName = cycle.label.split(" ")[0] ?? "Upcoming";
+
+    Object.assign(cycle, {
+      requestedBy: "EM Manager A",
+      requestedDate: cycle.cycleStart,
+      emManagerComments: `${monthName} cycle is pre-seeded as a future Phase 1 example.`,
+      assigneeComments: undefined,
+      sentToTpm: undefined,
+      sentToTpmDate: undefined,
+      tpmConfirmedDate: undefined,
+      tpmOutcome: undefined,
+      poTrackedByAutomation: undefined,
+      poAutomationCapturedAt: undefined,
+      poAutomationMailbox: undefined,
+      poAutomationEmailSubject: undefined,
+      poAutomationAttachmentSaved: undefined,
+      poSubmittedViaOutlook: undefined,
+      poEmailSentDate: undefined,
+      poAcknowledgementReceived: undefined,
+      poAcknowledgedDate: undefined,
+      forecastPdfHref: undefined,
       phaseId: 0,
       closed: false
     } satisfies Partial<ForecastCycleRow>);
@@ -442,6 +552,10 @@ function seededCycles(): ForecastCycleRow[] {
       requestedBy: "EM Manager A",
       requestedDate: "2026-04-01",
       emManagerComments: "API cycle due this month.",
+      sentToTpm: true,
+      sentToTpmDate: "2026-04-24",
+      tpmConfirmedDate: "2026-04-28",
+      tpmOutcome: "approved",
       poTrackedByAutomation: true,
       poAutomationCapturedAt: "2026-04-29",
       poAutomationMailbox: "po-submissions@abbvie.example",
@@ -451,7 +565,8 @@ function seededCycles(): ForecastCycleRow[] {
       poEmailSentDate: "2026-04-29",
       poAcknowledgementReceived: "No",
       phaseId: 4,
-      closed: false
+      forecastPdfHref: forecastFolderRoute(s4[2].id),
+      closed: true
     } satisfies Partial<ForecastCycleRow>);
   }
 

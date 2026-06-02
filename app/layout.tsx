@@ -4,8 +4,8 @@ import { ReactNode } from 'react';
 import { SessionDataProvider } from './SessionDataProvider';
 
 export const metadata: Metadata = {
-  title: 'Forecast Management System',
-  description: 'Mock-up of AbbVie forecast management workflow',
+  title: 'Forecast and PO Management System',
+  description: 'Mock-up of AbbVie forecast and purchase order management workflow',
   icons: {
     icon: [{ url: '/favicon.png', type: 'image/png' }],
     apple: '/favicon.png'
@@ -14,12 +14,12 @@ export const metadata: Metadata = {
   // Provide a base URL for resolving open graph / twitter images. Use an env var in production.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'Forecast Management Portal',
-    description: 'Mock-up of AbbVie forecast management workflow',
+    title: 'Forecast and PO Management Portal',
+    description: 'Mock-up of AbbVie forecast and purchase order management workflow',
     images: ['/favicon.png']
   },
   twitter: {
-    title: 'Forecast Management Portal',
+    title: 'Forecast and PO Management Portal',
     card: 'summary',
     images: ['/favicon.png']
   }
