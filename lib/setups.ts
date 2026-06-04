@@ -45,6 +45,13 @@ export type TpmSubmissionScheduleRule =
       weekday: Weekday;
     } & TpmSubmissionScheduleAlignment);
 
+export type PoSubmissionScheduleRule =
+  | TpmSubmissionScheduleRule
+  | {
+      type: "DaysAfterForecastSubmission";
+      daysAfter: number;
+    };
+
 export const DEFAULT_TPM_SUBMISSION_SCHEDULE: TpmSubmissionScheduleRule = {
   type: "FixedCalendarDate",
   dayOfMonth: 25,
@@ -76,6 +83,11 @@ export const DEFAULT_INITIATION_SCHEDULE: TpmSubmissionScheduleRule = {
   periodMonthOfYear: 1
 };
 
+export const DEFAULT_PO_SUBMISSION_SCHEDULE: PoSubmissionScheduleRule = {
+  type: "DaysAfterForecastSubmission",
+  daysAfter: 30
+};
+
 export type SetupRow = {
   id: string;
   pillar: (typeof PILLARS)[number];
@@ -99,6 +111,7 @@ export type SetupRow = {
   preparationDueSchedule: TpmSubmissionScheduleRule;
   reviewDueSchedule: TpmSubmissionScheduleRule;
   tpmSubmissionSchedule: TpmSubmissionScheduleRule;
+  poSubmissionSchedule?: PoSubmissionScheduleRule;
   initiationSchedule: TpmSubmissionScheduleRule;
   automateInstanceInitiation?: boolean;
 };
@@ -187,6 +200,14 @@ export function describeTpmSubmissionScheduleSummary(rule: TpmSubmissionSchedule
   return `Last ${rule.weekday}`;
 }
 
+export function describePoSubmissionScheduleSummary(rule: PoSubmissionScheduleRule, recurrence: Recurrence) {
+  if (rule.type === "DaysAfterForecastSubmission") {
+    return rule.daysAfter === 0 ? "Same day as forecast submission to TPM" : `${rule.daysAfter} day${rule.daysAfter === 1 ? "" : "s"} after forecast submission to TPM`;
+  }
+
+  return describeTpmSubmissionScheduleSummary(rule, recurrence);
+}
+
 export const RECURRENCE_OPTIONS: Recurrence[] = ["Monthly", "Quarterly", "Yearly"];
 
 export const BASE_SETUPS: SetupRow[] = [
@@ -213,6 +234,7 @@ export const BASE_SETUPS: SetupRow[] = [
     preparationDueSchedule: DEFAULT_PREPARATION_DUE_SCHEDULE,
     reviewDueSchedule: DEFAULT_REVIEW_DUE_SCHEDULE,
     tpmSubmissionSchedule: DEFAULT_TPM_SUBMISSION_SCHEDULE,
+    poSubmissionSchedule: DEFAULT_PO_SUBMISSION_SCHEDULE,
     initiationSchedule: DEFAULT_INITIATION_SCHEDULE,
     automateInstanceInitiation: false
   },

@@ -56,6 +56,16 @@ export type CentralLeadershipSignal = {
   tone: "emerald" | "amber" | "rose";
 };
 
+export type CentralLeadershipRow = {
+  tpm: string;
+  setupId: string;
+  forecastCadence: string;
+  onTimeSubmissionPercent: string;
+  eligibleInstanceCount: number;
+  onTimeInstanceCount: number;
+  tone: "slate" | "emerald" | "amber" | "rose";
+};
+
 export type CentralTpmAttentionRow = {
   tpm: string;
   setupId: string;
@@ -67,6 +77,8 @@ export type CentralTpmAttentionRow = {
 
 export type CentralDashboardData = {
   headline: MetricSummary[];
+  leadershipRows: CentralLeadershipRow[];
+  poLeadershipRows: CentralLeadershipRow[];
   executive: {
     overall: CentralLeadershipSignal;
     thisMonth: CentralLeadershipSignal;
@@ -140,6 +152,10 @@ function isAfter(actual?: string, due?: string) {
   return actual > due;
 }
 
+function poSubmissionDue(cycle: ForecastCycleRow) {
+  return cycle.poSubmissionDue || cycle.tpmSubmissionDue;
+}
+
 function dayDifference(start?: string, end?: string) {
   if (!start || !end) return null;
   const startDate = new Date(`${start}T00:00:00Z`);
@@ -203,6 +219,30 @@ function forecastSubmitted(cycle: ForecastCycleRow) {
   return Boolean(cycle.sentToTpm || cycle.sentToTpmDate);
 }
 
+function eligibleForOnTimeSubmission(cycle: ForecastCycleRow, today: Date) {
+  if (forecastSubmitted(cycle) || cycle.closed || cycle.requestedDate) return true;
+
+  const initiationDate = parseIsoDate(cycle.initiationTargetDate);
+  if (initiationDate && initiationDate <= today) return true;
+
+  const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
+  return Boolean(dueDate && dueDate < today);
+}
+
+function recurrenceSortValue(recurrence: SetupRow["recurrence"]) {
+  if (recurrence === "Monthly") return 1;
+  if (recurrence === "Quarterly") return 2;
+  return 3;
+}
+
+function formatCadenceLabel(setups: SetupRow[]) {
+  const recurrences = Array.from(new Set(setups.map((setup) => setup.recurrence)))
+    .sort((a, b) => recurrenceSortValue(a) - recurrenceSortValue(b));
+
+  if (!recurrences.length) return "—";
+  return recurrences.join(", ");
+}
+
 function forecastCompleted(cycle: ForecastCycleRow) {
   return Boolean(cycle.closed && cycle.forecastPdfHref);
 }
@@ -230,8 +270,8 @@ export function buildMetricsDashboard(cycles: ForecastCycleRow[], setupCount: nu
   const poSubmittedAcknowledgedCount = cycles.filter(
     (cycle) => getPurchaseOrderStatus(cycle) === "Submitted - Acknowledged"
   ).length;
-  const onTimePoSubmissions = cycles.filter((cycle) => isOnOrBefore(cycle.poEmailSentDate, cycle.tpmSubmissionDue)).length;
-  const latePoSubmissions = cycles.filter((cycle) => isAfter(cycle.poEmailSentDate, cycle.tpmSubmissionDue)).length;
+  const onTimePoSubmissions = cycles.filter((cycle) => isOnOrBefore(cycle.poEmailSentDate, poSubmissionDue(cycle))).length;
+  const latePoSubmissions = cycles.filter((cycle) => isAfter(cycle.poEmailSentDate, poSubmissionDue(cycle))).length;
   const autoTrackedPOs = cycles.filter(
     (cycle) => getPurchaseOrderAutomationStatus(cycle) === "Automated"
   ).length;
@@ -407,8 +447,9 @@ export function buildCentralDashboard(
     .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue));
 
   const dueInThreeMonthsCount = dueNextThreeMonthsRows.length;
-  const forecastSubmittedCount = scopedCycles.filter(forecastSubmitted).length;
-  const onTimeForecastSubmissions = scopedCycles.filter((cycle) => isOnOrBefore(cycle.sentToTpmDate, cycle.tpmSubmissionDue)).length;
+  const eligibleOnTimeCycles = scopedCycles.filter((cycle) => eligibleForOnTimeSubmission(cycle, today));
+  const onTimeForecastSubmissions = eligibleOnTimeCycles.filter((cycle) => isOnOrBefore(cycle.sentToTpmDate, cycle.tpmSubmissionDue)).length;
+  const onTimePoSubmissions = eligibleOnTimeCycles.filter((cycle) => isOnOrBefore(cycle.poEmailSentDate, poSubmissionDue(cycle))).length;
 
   const upcomingExpirations = scopedSetups
     .map((setup) => {
@@ -438,6 +479,48 @@ export function buildCentralDashboard(
       tpmSubmissionDueDate: describeTpmSubmissionScheduleSummary(setup.tpmSubmissionSchedule, setup.recurrence),
       contractEffectiveDates: formatContractEffectiveDates(setup.startDate, setup.endDate)
     }));
+
+  const leadershipRows = Array.from(new Set([...scopedSetups.map((setup) => setup.tpm), ...scopedCycles.map((cycle) => cycle.tpm)].filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b))
+    .map((tpm) => {
+      const tpmSetups = scopedSetups.filter((setup) => setup.tpm === tpm);
+      const eligibleTpmCycles = scopedCycles.filter((cycle) => cycle.tpm === tpm && eligibleForOnTimeSubmission(cycle, today));
+      const onTimeCount = eligibleTpmCycles.filter((cycle) => isOnOrBefore(cycle.sentToTpmDate, cycle.tpmSubmissionDue)).length;
+      const tone = eligibleTpmCycles.length === 0
+        ? "slate"
+        : healthTone(onTimeCount, eligibleTpmCycles.length);
+
+      return {
+        tpm,
+        setupId: tpmSetups[0]?.id ?? "",
+        forecastCadence: formatCadenceLabel(tpmSetups),
+        onTimeSubmissionPercent: eligibleTpmCycles.length === 0 ? "—" : formatRatio(onTimeCount, eligibleTpmCycles.length),
+        eligibleInstanceCount: eligibleTpmCycles.length,
+        onTimeInstanceCount: onTimeCount,
+        tone
+      } satisfies CentralLeadershipRow;
+    });
+
+  const poLeadershipRows = Array.from(new Set([...scopedSetups.map((setup) => setup.tpm), ...scopedCycles.map((cycle) => cycle.tpm)].filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b))
+    .map((tpm) => {
+      const tpmSetups = scopedSetups.filter((setup) => setup.tpm === tpm);
+      const eligibleTpmCycles = scopedCycles.filter((cycle) => cycle.tpm === tpm && eligibleForOnTimeSubmission(cycle, today));
+      const onTimeCount = eligibleTpmCycles.filter((cycle) => isOnOrBefore(cycle.poEmailSentDate, poSubmissionDue(cycle))).length;
+      const tone = eligibleTpmCycles.length === 0
+        ? "slate"
+        : healthTone(onTimeCount, eligibleTpmCycles.length);
+
+      return {
+        tpm,
+        setupId: tpmSetups[0]?.id ?? "",
+        forecastCadence: formatCadenceLabel(tpmSetups),
+        onTimeSubmissionPercent: eligibleTpmCycles.length === 0 ? "—" : formatRatio(onTimeCount, eligibleTpmCycles.length),
+        eligibleInstanceCount: eligibleTpmCycles.length,
+        onTimeInstanceCount: onTimeCount,
+        tone
+      } satisfies CentralLeadershipRow;
+    });
 
   const monthSignal = buildLeadershipSignal("Month health", dueThisMonthCycles, today);
   const quarterSignal = buildLeadershipSignal("Quarter health", dueThisQuarterCycles, today);
@@ -516,11 +599,31 @@ export function buildCentralDashboard(
       },
       {
         label: "% On-Time Forecast Submission",
-        value: formatRatio(onTimeForecastSubmissions, forecastSubmittedCount),
-        detail: `${onTimeForecastSubmissions} on time out of ${forecastSubmittedCount} submitted`,
-        tone: onTimeForecastSubmissions === forecastSubmittedCount ? "emerald" : "amber"
+        value: eligibleOnTimeCycles.length === 0 ? "—" : formatRatio(onTimeForecastSubmissions, eligibleOnTimeCycles.length),
+        detail: eligibleOnTimeCycles.length === 0
+          ? "No forecast instances are eligible yet"
+          : `${onTimeForecastSubmissions} on time out of ${eligibleOnTimeCycles.length} eligible`,
+        tone: eligibleOnTimeCycles.length === 0
+          ? "slate"
+          : onTimeForecastSubmissions === eligibleOnTimeCycles.length
+            ? "emerald"
+            : "amber"
+      },
+      {
+        label: "% On-Time PO Submission",
+        value: eligibleOnTimeCycles.length === 0 ? "—" : formatRatio(onTimePoSubmissions, eligibleOnTimeCycles.length),
+        detail: eligibleOnTimeCycles.length === 0
+          ? "No PO instances are eligible yet"
+          : `${onTimePoSubmissions} on time out of ${eligibleOnTimeCycles.length} eligible`,
+        tone: eligibleOnTimeCycles.length === 0
+          ? "slate"
+          : onTimePoSubmissions === eligibleOnTimeCycles.length
+            ? "emerald"
+            : "amber"
       }
     ],
+    leadershipRows,
+    poLeadershipRows,
     executive: {
       overall: {
         label: "Leadership signal",

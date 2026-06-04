@@ -44,6 +44,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
   const cycle = useMemo(() => allCycles.find((entry) => entry.id === params.cycleId), [allCycles, params.cycleId]);
 
   const [poSubmittedViaOutlook, setPoSubmittedViaOutlook] = useState(false);
+  const [poSubmissionDue, setPoSubmissionDue] = useState("");
   const [poEmailSentDate, setPoEmailSentDate] = useState("");
   const [poAcknowledgementReceived, setPoAcknowledgementReceived] = useState<"" | "Yes" | "No">("");
   const [poAcknowledgedDate, setPoAcknowledgedDate] = useState("");
@@ -59,6 +60,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
     const automationFound = Boolean(cycle?.poTrackedByAutomation && cycle?.poAutomationCapturedAt);
 
     setPoSubmittedViaOutlook(Boolean(cycle?.poSubmittedViaOutlook || automationFound));
+    setPoSubmissionDue(cycle?.poSubmissionDue ?? cycle?.tpmSubmissionDue ?? "");
     setPoEmailSentDate(cycle?.poEmailSentDate ?? cycle?.poAutomationCapturedAt ?? "");
     setPoAcknowledgementReceived(cycle?.poAcknowledgementReceived ?? "");
     setPoAcknowledgedDate(cycle?.poAcknowledgedDate ?? "");
@@ -106,6 +108,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
       poAutomationEmailSubject: poAutomationEmailSubject || undefined,
       poAutomationAttachmentSaved,
       poSubmittedViaOutlook: automationFound ? true : poSubmittedViaOutlook,
+      poSubmissionDue: poSubmissionDue || undefined,
       poEmailSentDate: automationFound ? (poAutomationCapturedAt || poEmailSentDate || undefined) : (poEmailSentDate || undefined),
       poAcknowledgementReceived: poAcknowledgementReceived || undefined,
       poAcknowledgedDate: poAcknowledgementReceived === "Yes" && poAcknowledgedDate ? poAcknowledgedDate : undefined,
@@ -144,6 +147,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
             <span className="text-sm"><span className="font-medium text-slate-700">Pillar</span> <span className="font-semibold text-slate-900">{cycle.pillar}</span></span>
             <span className="text-sm"><span className="font-medium text-slate-700">TPM</span> <span className="font-semibold text-slate-900">{cycle.tpm || "—"}</span></span>
             <span className="text-sm"><span className="font-medium text-slate-700">Products</span> <span className="font-semibold text-slate-900">{formatProductsLabel(cycle.products) || "—"}</span></span>
+            <span className="text-sm"><span className="font-medium text-slate-700">PO due</span> <span className="font-semibold text-slate-900">{poSubmissionDue || "—"}</span></span>
           </div>
         </div>
 
@@ -164,7 +168,7 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                 </PowerInfoStrip>
               ) : (
                 <PowerInfoStrip tone="amber">
-                  No automated PO email was found. Please resend the email to po-submissions@abbvie.example. Otherwise, enter the PO submission manually below.
+                  No automated PO submission email was found. If you recently sent an email to the shared mailbox, please allow up to one hour for the system to process and display your submission. If your PO still does not appear after that time, please resend the email to po-submission@abbvie.example or enter the PO details manually below.
                 </PowerInfoStrip>
               )}
 
@@ -210,6 +214,15 @@ export default function PurchaseOrderPage({ params }: { params: { cycleId: strin
                   />
                   I have sent the PO to TPM via Outlook
                 </label>
+              </PowerField>
+
+              <PowerField label="PO submission due date">
+                <input
+                  type="date"
+                  className={powerInputClassName}
+                  value={poSubmissionDue}
+                  onChange={(e) => setPoSubmissionDue(e.target.value)}
+                />
               </PowerField>
 
               <PowerField label="Date email was sent">

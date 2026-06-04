@@ -11,7 +11,7 @@ import {
   buildCentralDashboard,
   type CentralDueRow,
   type CentralExpirationRow,
-  type CentralLeadershipSignal,
+  type CentralLeadershipRow,
   type CentralSetupSummaryRow,
   type CentralTpmAttentionRow,
   type MetricSummary
@@ -76,12 +76,20 @@ export default function CentralPage() {
           </div>
 
           <div className="space-y-6 bg-[#f4f4f4] px-5 py-5">
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-              <LeadershipSummaryPanel
-                overall={dashboard.executive.overall}
-                thisMonth={dashboard.executive.thisMonth}
-                thisQuarter={dashboard.executive.thisQuarter}
+            <section className="grid gap-4 xl:grid-cols-2">
+              <LeadershipOnTimeTable
+                title="Forecast On-Time Submission %"
+                description=""
+                rows={dashboard.leadershipRows}
               />
+              <LeadershipOnTimeTable
+                title="PO On-Time Submission %"
+                description=""
+                rows={dashboard.poLeadershipRows}
+              />
+            </section>
+
+            <section>
               <TpmAttentionPanel rows={dashboard.tpmAttentionRows} />
             </section>
 
@@ -109,36 +117,72 @@ export default function CentralPage() {
   );
 }
 
-function leadershipToneClassName(tone: CentralLeadershipSignal["tone"]) {
+function toneClassName(tone: "slate" | "emerald" | "amber" | "rose") {
+  if (tone === "slate") return "border-slate-300 bg-slate-50 text-slate-800";
   if (tone === "emerald") return "border-emerald-300 bg-emerald-50 text-emerald-950";
   if (tone === "amber") return "border-amber-300 bg-amber-50 text-amber-950";
   return "border-rose-300 bg-rose-50 text-rose-950";
 }
 
-function LeadershipSummaryPanel({
-  overall,
-  thisMonth,
-  thisQuarter
+function LeadershipOnTimeTable({
+  title,
+  description,
+  rows
 }: {
-  overall: CentralLeadershipSignal;
-  thisMonth: CentralLeadershipSignal;
-  thisQuarter: CentralLeadershipSignal;
+  title: string;
+  description: string;
+  rows: CentralLeadershipRow[];
 }) {
   return (
     <section className="overflow-hidden border border-slate-300 bg-white">
       <div className="border-b border-slate-300 bg-slate-100 px-4 py-3">
-        <h2 className="text-lg font-semibold text-slate-900">Leadership Snapshot</h2>
-        <p className="mt-1 text-sm text-slate-600">A three-second view of whether the month and quarter are on track.</p>
+        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
       </div>
-      <div className="grid gap-3 p-4 md:grid-cols-3">
-        {[overall, thisMonth, thisQuarter].map((signal) => (
-          <div key={signal.label} className={["border px-4 py-4", leadershipToneClassName(signal.tone)].join(" ")}>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">{signal.label}</div>
-            <div className="mt-3 text-3xl font-semibold">{signal.value}</div>
-            <div className="mt-2 text-sm leading-6 text-slate-700">{signal.detail}</div>
-          </div>
-        ))}
-      </div>
+      {rows.length === 0 ? (
+        <div className="px-4 py-10 text-sm text-slate-500">No TPM submission data is available for the current pillar filter.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-[#d9d9d9] text-slate-800">
+              <tr>
+                <th className="border-r border-slate-300 px-4 py-3 text-left text-sm font-semibold">TPM</th>
+                <th className="border-r border-slate-300 px-4 py-3 text-left text-sm font-semibold">Forecast Cadence</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">On-Time Submission %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.tpm} className={index < rows.length - 1 ? "border-b border-slate-200" : ""}>
+                  <td className="px-4 py-4 text-sm font-medium text-slate-900">
+                    {row.setupId ? (
+                      <Link href={`/setups/${encodeURIComponent(row.setupId)}`} className="underline underline-offset-2 hover:text-slate-700">
+                        {row.tpm}
+                      </Link>
+                    ) : (
+                      row.tpm
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-slate-700">{row.forecastCadence}</td>
+                  <td className="px-4 py-4 text-sm text-slate-700">
+                    {row.setupId ? (
+                      <Link href={`/setups/${encodeURIComponent(row.setupId)}`} className="inline-flex">
+                        <span className={["inline-flex rounded-sm border px-2.5 py-1 font-semibold", toneClassName(row.tone)].join(" ")}>
+                          {row.onTimeSubmissionPercent}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className={["inline-flex rounded-sm border px-2.5 py-1 font-semibold", toneClassName(row.tone)].join(" ")}>
+                        {row.onTimeSubmissionPercent}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
@@ -158,7 +202,7 @@ function TpmAttentionPanel({ rows }: { rows: CentralTpmAttentionRow[] }) {
             <div key={`${row.tpm}-${row.setupId}`} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={["inline-flex rounded-sm border px-2 py-1 text-xs font-semibold", leadershipToneClassName(row.tone)].join(" ")}>
+                  <span className={["inline-flex rounded-sm border px-2 py-1 text-xs font-semibold", toneClassName(row.tone)].join(" ")}>
                     {row.tone === "emerald" ? "Green" : row.tone === "amber" ? "Orange" : "Red"}
                   </span>
                   <span className="text-base font-semibold text-slate-900">{row.tpm}</span>

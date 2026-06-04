@@ -9,9 +9,11 @@ import { getPurchaseOrderStatus } from "../../lib/purchaseOrders";
 import {
   BASE_SETUPS,
   DEFAULT_INITIATION_SCHEDULE,
+  DEFAULT_PO_SUBMISSION_SCHEDULE,
   DEFAULT_PREPARATION_DUE_SCHEDULE,
   DEFAULT_REVIEW_DUE_SCHEDULE,
   formatProductsLabel,
+  type PoSubmissionScheduleRule,
   type Recurrence,
   type TpmSubmissionScheduleRule
 } from "../../lib/setups";
@@ -49,11 +51,24 @@ function currentPhaseBadge(row: ForecastCycleRow) {
 
 function purchaseOrderBadge(row: ForecastCycleRow) {
   const status = getPurchaseOrderStatus(row);
+  const isLate = Boolean(row.poEmailSentDate && row.poSubmissionDue && row.poEmailSentDate > row.poSubmissionDue);
+
+  if (isLate) {
+    return {
+      label: "Late Submission",
+      detail: `Sent on ${row.poEmailSentDate} against due date ${row.poSubmissionDue}`,
+      cls: "border-rose-300 bg-rose-50 text-rose-900"
+    };
+  }
 
   if (status === "Submitted - Acknowledged") {
     return {
       label: status,
-      detail: row.poAcknowledgedDate ? `TPM acknowledged on ${row.poAcknowledgedDate}` : "TPM acknowledgment recorded",
+      detail: row.poAcknowledgedDate
+        ? `TPM acknowledged on ${row.poAcknowledgedDate}${row.poSubmissionDue ? ` • Due ${row.poSubmissionDue}` : ""}`
+        : row.poSubmissionDue
+          ? `TPM acknowledgment recorded • Due ${row.poSubmissionDue}`
+          : "TPM acknowledgment recorded",
       cls: "border-emerald-300 bg-emerald-50 text-emerald-900"
     };
   }
@@ -61,14 +76,18 @@ function purchaseOrderBadge(row: ForecastCycleRow) {
   if (status === "Submitted - Not Acknowledged") {
     return {
       label: status,
-      detail: row.poEmailSentDate ? `Sent on ${row.poEmailSentDate}` : "Awaiting TPM acknowledgment",
+      detail: row.poEmailSentDate
+        ? `Sent on ${row.poEmailSentDate}${row.poSubmissionDue ? ` • Due ${row.poSubmissionDue}` : ""}`
+        : row.poSubmissionDue
+          ? `Awaiting TPM acknowledgment • Due ${row.poSubmissionDue}`
+          : "Awaiting TPM acknowledgment",
       cls: "border-amber-300 bg-amber-50 text-amber-900"
     };
   }
 
   return {
     label: status,
-    detail: "PO has not been sent yet",
+    detail: row.poSubmissionDue ? `PO has not been sent yet • Due ${row.poSubmissionDue}` : "PO has not been sent yet",
     cls: "border-rose-300 bg-rose-50 text-rose-900"
   };
 }
@@ -88,7 +107,13 @@ const MONTH_NAMES = [
   "December"
 ];
 
-function describeTpmSchedule(rule: TpmSubmissionScheduleRule, recurrence: Recurrence) {
+function describeTpmSchedule(rule: TpmSubmissionScheduleRule | PoSubmissionScheduleRule, recurrence: Recurrence) {
+  if (rule.type === "DaysAfterForecastSubmission") {
+    return rule.daysAfter === 0
+      ? "Same day forecast is submitted to TPM"
+      : `${rule.daysAfter} day${rule.daysAfter === 1 ? "" : "s"} after forecast submission to TPM`;
+  }
+
   const ordinal = (n: number) => {
     const mod10 = n % 10;
     const mod100 = n % 100;
@@ -208,7 +233,10 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                 {describeTpmSchedule(setup.reviewDueSchedule ?? DEFAULT_REVIEW_DUE_SCHEDULE, setup.recurrence)}
               </div>
               <div>
-                <span className="font-medium">TPM submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
+                <span className="font-medium">Forecast submission rule:</span> {describeTpmSchedule(setup.tpmSubmissionSchedule, setup.recurrence)}
+              </div>
+              <div>
+                <span className="font-medium">PO submission rule:</span> {describeTpmSchedule(setup.poSubmissionSchedule ?? DEFAULT_PO_SUBMISSION_SCHEDULE, setup.recurrence)}
               </div>
               <div>
                 <span className="font-medium">Automate forecast instance initiation:</span>{" "}
@@ -271,6 +299,7 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Due Date</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Current Forecast Phase</th>
               <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">Forecast Folder</th>
+              <th className="border-r border-slate-400 px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">PO Due Date</th>
               <th className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap">PO Status</th>
             </tr>
           </thead>
@@ -316,6 +345,7 @@ export function SetupDetailClient({ setupId }: { setupId: string }) {
                     <span className="text-slate-400">—</span>
                   )}
                 </td>
+                <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">{c.poSubmissionDue || "—"}</td>
                 <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">
                   {(() => {
                     const b = purchaseOrderBadge(c);

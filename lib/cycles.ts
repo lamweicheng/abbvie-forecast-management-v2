@@ -1,5 +1,5 @@
-import type { SetupRow, Recurrence, TpmSubmissionScheduleRule, Weekday } from "./setups";
-import { DEFAULT_INITIATION_SCHEDULE, DEFAULT_PREPARATION_DUE_SCHEDULE, DEFAULT_REVIEW_DUE_SCHEDULE } from "./setups";
+import type { SetupRow, Recurrence, TpmSubmissionScheduleRule, PoSubmissionScheduleRule, Weekday } from "./setups";
+import { DEFAULT_INITIATION_SCHEDULE, DEFAULT_PO_SUBMISSION_SCHEDULE, DEFAULT_PREPARATION_DUE_SCHEDULE, DEFAULT_REVIEW_DUE_SCHEDULE } from "./setups";
 import { BASE_SETUPS } from "./setups";
 import { formatProductsLabel } from "./setups";
 import { PILLARS } from "./constants";
@@ -39,6 +39,7 @@ export type ForecastCycleRow = {
   gspForecastDue?: string; // YYYY-MM-DD
   approverReviewDue?: string; // YYYY-MM-DD
   tpmSubmissionDue: string; // YYYY-MM-DD
+  poSubmissionDue?: string; // YYYY-MM-DD
 
   sentToTpm?: boolean;
   sentToTpmDate?: string; // YYYY-MM-DD
@@ -94,6 +95,13 @@ function formatIsoDate(date: Date) {
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
   const d = String(date.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function addDaysIso(isoDate: string, days: number) {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  date.setUTCDate(date.getUTCDate() + Math.floor(days));
+  return formatIsoDate(date);
 }
 
 function todayIsoUtc() {
@@ -191,6 +199,20 @@ function computeScheduledDueDate(
   return computeTpmDueDate(rule, year, monthIndex0);
 }
 
+function computePoSubmissionDueDate(
+  recurrence: Recurrence,
+  rule: PoSubmissionScheduleRule,
+  periodStart: Date,
+  periodEnd: Date,
+  tpmSubmissionDue: string
+) {
+  if (rule.type === "DaysAfterForecastSubmission") {
+    return addDaysIso(tpmSubmissionDue, rule.daysAfter);
+  }
+
+  return computeScheduledDueDate(recurrence, rule, periodStart, periodEnd);
+}
+
 function monthLabel(date: Date) {
   return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
 }
@@ -251,6 +273,13 @@ export function generateCyclesForSetup(
     const cycleEndIso = iso(periodEnd.getFullYear(), periodEnd.getMonth() + 1, periodEnd.getDate());
 
     const tpmSubmissionDue = computeScheduledDueDate(setup.recurrence, setup.tpmSubmissionSchedule, periodStart, periodEnd);
+    const poSubmissionDue = computePoSubmissionDueDate(
+      setup.recurrence,
+      setup.poSubmissionSchedule ?? DEFAULT_PO_SUBMISSION_SCHEDULE,
+      periodStart,
+      periodEnd,
+      tpmSubmissionDue
+    );
     const gspForecastDue = computeScheduledDueDate(
       setup.recurrence,
       setup.preparationDueSchedule ?? DEFAULT_PREPARATION_DUE_SCHEDULE,
@@ -299,6 +328,7 @@ export function generateCyclesForSetup(
       gspForecastDue,
       approverReviewDue,
       tpmSubmissionDue,
+      poSubmissionDue,
       phaseId: autoInitiated ? 1 : 0,
       closed: false
     });
@@ -326,6 +356,34 @@ function seededCycles(): ForecastCycleRow[] {
   for (const setup of BASE_SETUPS) {
     cycles.push(...generateCyclesForSetup(setup, cycles.map((c) => c.id)));
   }
+
+  const completeSeedCycle = (cycle: ForecastCycleRow) => {
+    const periodLabel = cycle.label.split(" - ")[0] ?? cycle.cycleStart;
+    const subjectPeriod = periodLabel.replace(/\s+/g, " ");
+
+    Object.assign(cycle, {
+      requestedBy: cycle.requestedBy ?? "Seeded historical data",
+      requestedDate: cycle.requestedDate ?? cycle.cycleStart,
+      emManagerComments: `Historical seeded forecast for ${subjectPeriod} completed on time.`,
+      assigneeComments: "Final forecast approved and published.",
+      sentToTpm: true,
+      sentToTpmDate: cycle.tpmSubmissionDue,
+      tpmConfirmedDate: cycle.tpmConfirmedDate ?? cycle.tpmSubmissionDue,
+      tpmOutcome: "approved",
+      poTrackedByAutomation: true,
+      poAutomationCapturedAt: cycle.poAutomationCapturedAt ?? cycle.tpmSubmissionDue,
+      poAutomationMailbox: cycle.poAutomationMailbox ?? "po-submissions@abbvie.example",
+      poAutomationEmailSubject: cycle.poAutomationEmailSubject ?? `PO Submission | ${cycle.tpm} | ${cycle.products.join(", ")} | ${subjectPeriod}`,
+      poAutomationAttachmentSaved: true,
+      poSubmittedViaOutlook: true,
+      poEmailSentDate: cycle.poEmailSentDate ?? cycle.poSubmissionDue ?? cycle.tpmSubmissionDue,
+      poAcknowledgementReceived: "Yes",
+      poAcknowledgedDate: cycle.poAcknowledgedDate ?? cycle.poSubmissionDue ?? cycle.tpmSubmissionDue,
+      phaseId: 4,
+      forecastPdfHref: cycle.forecastPdfHref ?? forecastFolderRoute(cycle.id),
+      closed: true
+    } satisfies Partial<ForecastCycleRow>);
+  };
 
   // Make a few seeds feel realistic and easy to understand in the UI.
   const bySetup = (setupId: string) => cycles.filter((c) => c.setupId === setupId).sort((a, b) => a.cycleStart.localeCompare(b.cycleStart));
@@ -598,6 +656,12 @@ function seededCycles(): ForecastCycleRow[] {
       forecastPdfHref: forecastFolderRoute(s5[2].id),
       closed: true
     } satisfies Partial<ForecastCycleRow>);
+  }
+
+  for (const cycle of cycles) {
+    if (cycle.tpmSubmissionDue <= "2026-06-30") {
+      completeSeedCycle(cycle);
+    }
   }
 
   return cycles;
