@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import BackButton from "../components/BackButton";
 import { useSessionData } from "../SessionDataProvider";
 import { BASE_CYCLES, type ForecastCycleRow } from "../../lib/cycles";
 import { PILLARS } from "../../lib/constants";
 import { BASE_SETUPS, formatProductsLabel } from "../../lib/setups";
+import { purchaseOrderRoute } from "../../lib/purchaseOrders";
+
+type CalendarTab = "forecast" | "po";
 
 function mergeById<T extends { id: string }>(base: T[], upsertsById: Record<string, T>) {
   const merged: T[] = base.map((r) => upsertsById[r.id] ?? r);
@@ -50,10 +54,24 @@ function daysUntilDue(dueIso: string, todayIso: string) {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function statusTone(cycle: ForecastCycleRow, todayIso: string) {
-  if (cycle.closed) return "slate";
+function dueDateForTab(cycle: ForecastCycleRow, tab: CalendarTab) {
+  return tab === "po" ? cycle.poSubmissionDue || cycle.tpmSubmissionDue : cycle.tpmSubmissionDue;
+}
 
-  const daysRemaining = daysUntilDue(cycle.tpmSubmissionDue, todayIso);
+function destinationForTab(cycle: ForecastCycleRow, tab: CalendarTab) {
+  return tab === "po" ? purchaseOrderRoute(cycle.id) : `/phases/${cycle.phaseId}?cycle=${encodeURIComponent(cycle.id)}`;
+}
+
+function isResolvedForTab(cycle: ForecastCycleRow, tab: CalendarTab) {
+  if (tab === "po") return Boolean(cycle.closed || cycle.poSubmittedViaOutlook || cycle.poEmailSentDate);
+  return cycle.closed;
+}
+
+function statusTone(cycle: ForecastCycleRow, todayIso: string, tab: CalendarTab) {
+  if (isResolvedForTab(cycle, tab)) return "slate";
+
+  const dueIso = dueDateForTab(cycle, tab);
+  const daysRemaining = daysUntilDue(dueIso, todayIso);
   if (daysRemaining === null) return "emerald";
   if (daysRemaining < 0) return "rose";
   if (daysRemaining < 7) return "amber";
@@ -84,9 +102,11 @@ const MONTH_NAMES = [
 ];
 
 export default function CalendarPage() {
+  const searchParams = useSearchParams();
   const { setupsById, cyclesById } = useSessionData();
   const today = useMemo(() => new Date(), []);
   const todayIso = useMemo(() => isoDate(today), [today]);
+  const activeTab: CalendarTab = searchParams.get("tab") === "po" ? "po" : "forecast";
   const [pillar, setPillar] = useState<string>("All");
   const [tpm, setTpm] = useState<string>("All");
   const [product, setProduct] = useState<string>("All");
@@ -108,9 +128,9 @@ export default function CalendarPage() {
       if (pillar !== "All" && cycle.pillar !== pillar) return false;
       if (tpm !== "All" && cycle.tpm !== tpm) return false;
       if (product !== "All" && !(cycle.products ?? []).includes(product)) return false;
-      return Boolean(cycle.tpmSubmissionDue);
+      return Boolean(dueDateForTab(cycle, activeTab));
     });
-  }, [allCycles, pillar, tpm, product]);
+  }, [activeTab, allCycles, pillar, tpm, product]);
 
   const monthStart = useMemo(() => startOfMonth(visibleMonth), [visibleMonth]);
   const monthEnd = useMemo(() => addMonths(monthStart, 1), [monthStart]);
@@ -122,7 +142,7 @@ export default function CalendarPage() {
   const cyclesByDate = useMemo(() => {
     const map = new Map<string, ForecastCycleRow[]>();
     for (const cycle of filteredCycles) {
-      const key = cycle.tpmSubmissionDue;
+      const key = dueDateForTab(cycle, activeTab);
       if (!key) continue;
       const existing = map.get(key) ?? [];
       existing.push(cycle);
@@ -130,14 +150,22 @@ export default function CalendarPage() {
       map.set(key, existing);
     }
     return map;
-  }, [filteredCycles]);
+  }, [activeTab, filteredCycles]);
 
   const currentMonthCount = useMemo(() => {
     return filteredCycles.filter((cycle) => {
-      const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
+      const dueDate = parseIsoDate(dueDateForTab(cycle, activeTab));
       return Boolean(dueDate && dueDate >= monthStart && dueDate < monthEnd);
     }).length;
-  }, [filteredCycles, monthEnd, monthStart]);
+  }, [activeTab, filteredCycles, monthEnd, monthStart]);
+
+  const pageTitle = activeTab === "po" ? "PO Due Calendar" : "Forecast Due Calendar";
+  const pageDescription = activeTab === "po"
+    ? "Month-to-month PO due dates with filters for Pillar, TPM, and Product."
+    : "Month-to-month forecast due dates with filters for Pillar, TPM, and Product.";
+  const monthSummaryLabel = activeTab === "po" ? "PO due date" : "forecast due date";
+  const legendDoneLabel = activeTab === "po" ? "Gray is submitted" : "Gray is completed";
+  const tileCountLabel = activeTab === "po" ? "due" : "due";
 
   return (
     <main className="min-h-screen bg-[#efefef] py-6">
@@ -159,16 +187,36 @@ export default function CalendarPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">Calendar View</div>
-                <h1 className="mt-2 text-3xl font-semibold">Forecast Due Calendar</h1>
+                <div className="mt-3 inline-flex rounded-sm border border-white/30 bg-white/10 p-1">
+                  <Link
+                    href="/calendar"
+                    className={[
+                      "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
+                      activeTab === "forecast" ? "bg-white text-slate-900" : "text-white hover:bg-white/10"
+                    ].join(" ")}
+                  >
+                    Forecast
+                  </Link>
+                  <Link
+                    href="/calendar?tab=po"
+                    className={[
+                      "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
+                      activeTab === "po" ? "bg-white text-slate-900" : "text-white hover:bg-white/10"
+                    ].join(" ")}
+                  >
+                    PO
+                  </Link>
+                </div>
+                <h1 className="mt-3 text-3xl font-semibold">{pageTitle}</h1>
                 <p className="mt-2 max-w-4xl text-sm text-white/90">
-                  Month-to-month forecast due dates with filters for Pillar, TPM, and Product.
+                  {pageDescription}
                 </p>
               </div>
 
               <div className="rounded-sm border border-white/30 bg-white/10 px-4 py-3 text-sm text-white">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80">Visible month</div>
                 <div className="mt-1 text-lg font-semibold">{MONTH_NAMES[monthStart.getUTCMonth()]} {monthStart.getUTCFullYear()}</div>
-                <div className="mt-1 text-white/85">{currentMonthCount} forecast due date{currentMonthCount === 1 ? "" : "s"} in view</div>
+                <div className="mt-1 text-white/85">{currentMonthCount} {monthSummaryLabel}{currentMonthCount === 1 ? "" : "s"} in view</div>
               </div>
             </div>
           </div>
@@ -230,7 +278,7 @@ export default function CalendarPage() {
             <section className="border border-slate-300 bg-white px-4 py-3">
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-700">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Legend</span>
-                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-slate-300" /> Gray is completed</span>
+                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-slate-300" /> {legendDoneLabel}</span>
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-emerald-300" /> Green is on track</span>
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-amber-300" /> Amber is risk: less than 7 days till due date</span>
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-rose-500" /> Red is overdue</span>
@@ -253,8 +301,8 @@ export default function CalendarPage() {
                     const dayCycles = cyclesByDate.get(key) ?? [];
                     const inCurrentMonth = day.getUTCMonth() === monthStart.getUTCMonth();
                     const isToday = key === todayIso;
-                    const completedCount = dayCycles.filter((cycle) => cycle.closed).length;
-                    const allCompleted = dayCycles.length > 0 && completedCount === dayCycles.length;
+                    const resolvedCount = dayCycles.filter((cycle) => isResolvedForTab(cycle, activeTab)).length;
+                    const allResolved = dayCycles.length > 0 && resolvedCount === dayCycles.length;
                     return (
                       <div key={key} className={[
                         "min-h-[170px] border-r border-b border-slate-300 p-2 last:border-r-0",
@@ -274,7 +322,7 @@ export default function CalendarPage() {
                             ) : null}
                             {dayCycles.length > 0 ? (
                               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                {allCompleted ? `${completedCount} completed` : `${dayCycles.length} due`}
+                                {allResolved ? `${resolvedCount} ${activeTab === "po" ? "submitted" : "completed"}` : `${dayCycles.length} ${tileCountLabel}`}
                               </span>
                             ) : null}
                           </div>
@@ -282,16 +330,16 @@ export default function CalendarPage() {
 
                         <div className="mt-2 space-y-1.5">
                           {dayCycles.slice(0, 3).map((cycle) => {
-                            const tone = statusTone(cycle, todayIso);
+                            const tone = statusTone(cycle, todayIso, activeTab);
                             return (
                               <Link
                                 key={cycle.id}
-                                href={`/phases/${cycle.phaseId}?cycle=${encodeURIComponent(cycle.id)}`}
+                                href={destinationForTab(cycle, activeTab)}
                                 className={[
                                   "block rounded-sm px-2 py-1 text-xs font-medium leading-5",
                                   badgeClassName(tone)
                                 ].join(" ")}
-                                title={`${cycle.id} • ${cycle.tpm} • ${formatProductsLabel(cycle.products)}`}
+                                title={`${cycle.id} • ${cycle.tpm} • ${formatProductsLabel(cycle.products)} • ${dueDateForTab(cycle, activeTab)}`}
                               >
                                 <span className="block truncate">{cycle.id} • {cycle.tpm}</span>
                                 <span className="block truncate opacity-90">{formatProductsLabel(cycle.products) || cycle.label}</span>
