@@ -87,6 +87,8 @@ export type CentralDashboardData = {
   tpmAttentionRows: CentralTpmAttentionRow[];
   dueThisMonthRows: CentralDueRow[];
   dueNextThreeMonthsRows: CentralDueRow[];
+  poDueThisMonthRows: CentralDueRow[];
+  poDueNextThreeMonthsRows: CentralDueRow[];
   upcomingExpirations: CentralExpirationRow[];
   setupSummaryRows: CentralSetupSummaryRow[];
 };
@@ -217,6 +219,10 @@ function buildLeadershipSignal(label: string, cycles: ForecastCycleRow[], today:
 
 function forecastSubmitted(cycle: ForecastCycleRow) {
   return Boolean(cycle.sentToTpm || cycle.sentToTpmDate);
+}
+
+function poSubmitted(cycle: ForecastCycleRow) {
+  return getPurchaseOrderStatus(cycle) !== "Not Submitted";
 }
 
 function eligibleForOnTimeSubmission(cycle: ForecastCycleRow, today: Date) {
@@ -412,7 +418,7 @@ export function buildCentralDashboard(
   const expirationEnd = addMonths(today, 3);
   const todayIso = today.toISOString().slice(0, 10);
 
-  const mapDueRow = (cycle: ForecastCycleRow) => {
+  const mapForecastDueRow = (cycle: ForecastCycleRow) => {
       const dueDate = parseIsoDate(cycle.tpmSubmissionDue);
       const isOverdue = Boolean(dueDate && dueDate < today && !cycle.closed);
 
@@ -428,10 +434,28 @@ export function buildCentralDashboard(
       };
     };
 
+  const mapPoDueRow = (cycle: ForecastCycleRow) => {
+      const dueDateValue = poSubmissionDue(cycle);
+      const dueDate = parseIsoDate(dueDateValue);
+      const isSubmitted = poSubmitted(cycle);
+      const isOverdue = Boolean(dueDate && dueDate < today && !isSubmitted);
+
+      return {
+        id: cycle.id,
+        instance: cycle.label,
+        tpm: cycle.tpm,
+        dueDate: dueDateValue || "—",
+        currentPhase: getPurchaseOrderStatus(cycle),
+        currentPhaseId: cycle.phaseId,
+        status: isOverdue ? "Overdue" : isSubmitted ? "Submitted" : "On Track",
+        overdue: isOverdue
+      };
+    };
+
   const dueThisMonthRows = scopedCycles
     .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, thisMonthEnd))
     .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue))
-    .map(mapDueRow);
+    .map(mapForecastDueRow);
 
   const dueThisMonthCycles = scopedCycles
     .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, thisMonthEnd))
@@ -440,7 +464,17 @@ export function buildCentralDashboard(
   const dueNextThreeMonthsRows = scopedCycles
     .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, threeMonthsEnd))
     .sort((a, b) => a.tpmSubmissionDue.localeCompare(b.tpmSubmissionDue))
-    .map(mapDueRow);
+    .map(mapForecastDueRow);
+
+  const poDueThisMonthRows = scopedCycles
+    .filter((cycle) => withinRange(poSubmissionDue(cycle), thisMonthStart, thisMonthEnd))
+    .sort((a, b) => (poSubmissionDue(a) || "").localeCompare(poSubmissionDue(b) || ""))
+    .map(mapPoDueRow);
+
+  const poDueNextThreeMonthsRows = scopedCycles
+    .filter((cycle) => withinRange(poSubmissionDue(cycle), thisMonthStart, threeMonthsEnd))
+    .sort((a, b) => (poSubmissionDue(a) || "").localeCompare(poSubmissionDue(b) || ""))
+    .map(mapPoDueRow);
 
   const dueThisQuarterCycles = scopedCycles
     .filter((cycle) => withinRange(cycle.tpmSubmissionDue, thisMonthStart, threeMonthsEnd))
@@ -592,6 +626,18 @@ export function buildCentralDashboard(
         tone: "slate"
       },
       {
+        label: "POs due this month",
+        value: String(poDueThisMonthRows.length),
+        detail: pillar === "All" ? "Across all pillars" : `For ${pillar}`,
+        tone: poDueThisMonthRows.length > 0 ? "sky" : "slate"
+      },
+      {
+        label: "POs due in 3 months",
+        value: String(poDueNextThreeMonthsRows.length),
+        detail: "Current month through the next 2 months",
+        tone: "slate"
+      },
+      {
         label: "Upcoming contract expirations",
         value: String(upcomingExpirations.length),
         detail: "Setups ending in the next 90 days",
@@ -637,6 +683,8 @@ export function buildCentralDashboard(
     tpmAttentionRows,
     dueThisMonthRows,
     dueNextThreeMonthsRows,
+    poDueThisMonthRows,
+    poDueNextThreeMonthsRows,
     upcomingExpirations,
     setupSummaryRows
   };

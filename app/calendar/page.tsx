@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import BackButton from "../components/BackButton";
 import { useSessionData } from "../SessionDataProvider";
 import { BASE_CYCLES, type ForecastCycleRow } from "../../lib/cycles";
@@ -102,6 +102,14 @@ const MONTH_NAMES = [
 ];
 
 export default function CalendarPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#efefef] py-6" />}>
+      <CalendarPageContent />
+    </Suspense>
+  );
+}
+
+function CalendarPageContent() {
   const searchParams = useSearchParams();
   const { setupsById, cyclesById } = useSessionData();
   const today = useMemo(() => new Date(), []);

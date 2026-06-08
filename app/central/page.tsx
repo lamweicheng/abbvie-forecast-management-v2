@@ -99,12 +99,14 @@ export default function CentralPage() {
               ))}
             </section>
 
-            <section>
-              <DueThisMonthTable rows={dashboard.dueThisMonthRows} />
+            <section className="grid gap-4 xl:grid-cols-2">
+              <DueTable title="Forecasts Due This Month" emptyMessage="No forecast instances are due this month for the current pillar filter." rows={dashboard.dueThisMonthRows} />
+              <DueTable title="POs Due This Month" emptyMessage="No PO instances are due this month for the current pillar filter." rows={dashboard.poDueThisMonthRows} />
             </section>
 
-            <section>
+            <section className="grid gap-4 xl:grid-cols-2">
               <DueTable title="Forecasts Due In Next 3 Months" emptyMessage="No forecast instances are due in the next 3 months for the current pillar filter." rows={dashboard.dueNextThreeMonthsRows} />
+              <DueTable title="POs Due In Next 3 Months" emptyMessage="No PO instances are due in the next 3 months for the current pillar filter." rows={dashboard.poDueNextThreeMonthsRows} />
             </section>
 
             <UpcomingExpirationsTable rows={dashboard.upcomingExpirations} />
@@ -246,10 +248,6 @@ function MetricCard({ metric }: { metric: MetricSummary }) {
   );
 }
 
-function DueThisMonthTable({ rows }: { rows: CentralDueRow[] }) {
-  return <DueTable title="Forecasts Due This Month" emptyMessage="No forecast instances are due this month for the current pillar filter." rows={rows} />;
-}
-
 function DueTable({
   title,
   emptyMessage,
@@ -294,7 +292,7 @@ function DueTable({
                         "inline-flex rounded-sm border px-2 py-1 text-xs font-semibold",
                         row.overdue
                           ? "border-rose-300 bg-rose-50 text-rose-900"
-                          : row.status === "Completed"
+                          : row.status === "Completed" || row.status === "Submitted"
                             ? "border-emerald-300 bg-emerald-50 text-emerald-900"
                             : "border-sky-300 bg-sky-50 text-sky-900"
                       ].join(" ")}
