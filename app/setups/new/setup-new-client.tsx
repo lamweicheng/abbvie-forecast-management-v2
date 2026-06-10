@@ -280,23 +280,8 @@ export function SetupNewClient() {
   const [initiationPeriodMonthOfYear, setInitiationPeriodMonthOfYear] = useState<MonthOfYear>(
     (DEFAULT_INITIATION_SCHEDULE.periodMonthOfYear ?? 1) as MonthOfYear
   );
-  const [poScheduleType, setPoScheduleType] = useState<PoSubmissionScheduleRule["type"]>(
-    DEFAULT_PO_SUBMISSION_SCHEDULE.type
-  );
   const [poDaysAfterForecastSubmission, setPoDaysAfterForecastSubmission] = useState<number>(
     DEFAULT_PO_SUBMISSION_SCHEDULE.type === "DaysAfterForecastSubmission" ? DEFAULT_PO_SUBMISSION_SCHEDULE.daysAfter : 0
-  );
-  const [poFixedDayOfMonth, setPoFixedDayOfMonth] = useState<number>(
-    DEFAULT_TPM_SUBMISSION_SCHEDULE.type === "FixedCalendarDate" ? DEFAULT_TPM_SUBMISSION_SCHEDULE.dayOfMonth : 25
-  );
-  const [poNth, setPoNth] = useState<NthWeekday>(3);
-  const [poNthWeekday, setPoNthWeekday] = useState<Weekday>("Thursday");
-  const [poLastWeekday, setPoLastWeekday] = useState<Weekday>("Thursday");
-  const [poPeriodMonthInQuarter, setPoPeriodMonthInQuarter] = useState<QuarterMonthInPeriod>(
-    (DEFAULT_TPM_SUBMISSION_SCHEDULE.periodMonthInQuarter ?? 3) as QuarterMonthInPeriod
-  );
-  const [poPeriodMonthOfYear, setPoPeriodMonthOfYear] = useState<MonthOfYear>(
-    (DEFAULT_TPM_SUBMISSION_SCHEDULE.periodMonthOfYear ?? 3) as MonthOfYear
   );
 
   useEffect(() => {
@@ -413,37 +398,10 @@ export function SetupNewClient() {
     };
   })();
 
-  const poSubmissionSchedule: PoSubmissionScheduleRule = (() => {
-    if (poScheduleType === "DaysAfterForecastSubmission") {
-      return {
-        type: "DaysAfterForecastSubmission",
-        daysAfter: Math.max(0, Math.floor(poDaysAfterForecastSubmission || 0))
-      };
-    }
-    if (poScheduleType === "FixedCalendarDate") {
-      return {
-        type: "FixedCalendarDate",
-        dayOfMonth: poFixedDayOfMonth,
-        periodMonthInQuarter: poPeriodMonthInQuarter,
-        periodMonthOfYear: poPeriodMonthOfYear
-      };
-    }
-    if (poScheduleType === "NthWeekdayOfMonth") {
-      return {
-        type: "NthWeekdayOfMonth",
-        nth: poNth,
-        weekday: poNthWeekday,
-        periodMonthInQuarter: poPeriodMonthInQuarter,
-        periodMonthOfYear: poPeriodMonthOfYear
-      };
-    }
-    return {
-      type: "LastWeekdayOfMonth",
-      weekday: poLastWeekday,
-      periodMonthInQuarter: poPeriodMonthInQuarter,
-      periodMonthOfYear: poPeriodMonthOfYear
-    };
-  })();
+  const poSubmissionSchedule: PoSubmissionScheduleRule = {
+    type: "DaysAfterForecastSubmission",
+    daysAfter: Math.max(0, Math.floor(poDaysAfterForecastSubmission || 0))
+  };
 
   const unitLower = recurrenceNoun(recurrence).toLowerCase();
   const periodHint = recurrence === "Monthly" ? "" : ` (defaults to final month of the ${unitLower})`;
@@ -1395,60 +1353,12 @@ export function SetupNewClient() {
               Selected default PO submission due date: <span className="font-semibold">{describeTpmSchedule(poSubmissionSchedule, recurrence)}</span>
             </PowerInfoStrip>
 
-            {poScheduleType !== "DaysAfterForecastSubmission" && recurrence === "Quarterly" ? (
-              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Quarter alignment</div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span>Apply rule to</span>
-                  <select
-                    className={powerInputClassName}
-                    value={poPeriodMonthInQuarter}
-                    onChange={(e) => setPoPeriodMonthInQuarter(Number(e.target.value) as QuarterMonthInPeriod)}
-                  >
-                    {QUARTER_MONTH_IN_PERIOD_OPTIONS.map((v) => (
-                      <option key={v} value={v}>
-                        {v === 1 ? "First month" : v === 2 ? "Second month" : "Last month"}
-                      </option>
-                    ))}
-                  </select>
-                  <span>of each quarter</span>
-                </div>
-              </div>
-            ) : null}
-
-            {poScheduleType !== "DaysAfterForecastSubmission" && recurrence === "Yearly" ? (
-              <div className="border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Year alignment</div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span>Apply rule in</span>
-                  <select
-                    className={powerInputClassName}
-                    value={poPeriodMonthOfYear}
-                    onChange={(e) => setPoPeriodMonthOfYear(Number(e.target.value) as MonthOfYear)}
-                  >
-                    {MONTH_OF_YEAR_OPTIONS.map((m) => (
-                      <option key={m} value={m}>
-                        {MONTH_NAMES[m - 1]}
-                      </option>
-                    ))}
-                  </select>
-                  <span>each year</span>
-                </div>
-              </div>
-            ) : null}
-
             <div className="grid gap-3">
-              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
-                <input
-                  type="radio"
-                  name="poSchedule"
-                  className="mt-1"
-                  checked={poScheduleType === "DaysAfterForecastSubmission"}
-                  onChange={() => setPoScheduleType("DaysAfterForecastSubmission")}
-                />
-                <div className="flex-1 space-y-2">
+              <div className="border border-slate-300 bg-white px-4 py-3">
+                <div className="space-y-2">
                   <div className="text-sm font-semibold text-slate-800">Days after forecast is submitted to TPM</div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <span>Due</span>
                     <input
                       type="number"
                       min={0}
@@ -1459,100 +1369,7 @@ export function SetupNewClient() {
                     <span>day(s) after forecast submission</span>
                   </div>
                 </div>
-              </label>
-
-              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
-                <input
-                  type="radio"
-                  name="poSchedule"
-                  className="mt-1"
-                  checked={poScheduleType === "FixedCalendarDate"}
-                  onChange={() => setPoScheduleType("FixedCalendarDate")}
-                />
-                <div className="flex-1 space-y-2">
-                  <div className="text-sm font-semibold text-slate-800">Fixed calendar day of period</div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-                    <span>Day of month{periodHint}</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={31}
-                      className="w-24 rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
-                      value={poFixedDayOfMonth}
-                      onChange={(e) => setPoFixedDayOfMonth(Number(e.target.value))}
-                    />
-                    <span className="text-xs text-slate-700">Example: 25</span>
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
-                <input
-                  type="radio"
-                  name="poSchedule"
-                  className="mt-1"
-                  checked={poScheduleType === "NthWeekdayOfMonth"}
-                  onChange={() => setPoScheduleType("NthWeekdayOfMonth")}
-                />
-                <div className="flex-1 space-y-2">
-                  <div className="text-sm font-semibold text-slate-800">Nth weekday of period</div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-                    <span>Nth</span>
-                    <select
-                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
-                      value={poNth}
-                      onChange={(e) => setPoNth(Number(e.target.value) as NthWeekday)}
-                    >
-                      {NTH_WEEKDAY_OPTIONS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                    <span>Weekday</span>
-                    <select
-                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
-                      value={poNthWeekday}
-                      onChange={(e) => setPoNthWeekday(e.target.value as Weekday)}
-                    >
-                      {WEEKDAY_OPTIONS.map((w) => (
-                        <option key={w} value={w}>
-                          {w}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-xs text-slate-700">Example: 3rd Thursday</span>
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 border border-slate-300 bg-white px-4 py-3">
-                <input
-                  type="radio"
-                  name="poSchedule"
-                  className="mt-1"
-                  checked={poScheduleType === "LastWeekdayOfMonth"}
-                  onChange={() => setPoScheduleType("LastWeekdayOfMonth")}
-                />
-                <div className="flex-1 space-y-2">
-                  <div className="text-sm font-semibold text-slate-800">Last weekday of period</div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-                    <span>Weekday</span>
-                    <select
-                      className="rounded-sm border border-slate-500 bg-white px-3 py-2 text-base text-slate-900"
-                      value={poLastWeekday}
-                      onChange={(e) => setPoLastWeekday(e.target.value as Weekday)}
-                    >
-                      {WEEKDAY_OPTIONS.map((w) => (
-                        <option key={w} value={w}>
-                          {w}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-xs text-slate-700">Example: Last Thursday</span>
-                  </div>
-                </div>
-              </label>
+              </div>
             </div>
           </div>
 
